@@ -1,6 +1,6 @@
 # Wadder
 
-A python script for working with WAD and related binary file formats.
+a python script for working with WAD and related binary file formats.
 
 ## Background
 
@@ -15,20 +15,21 @@ the parser thinks this is a valid WAD. The rest of the functionality
 depends on apporopriate tags passed as command-line parameters. A 
 filename must always be the last parameter on the command-line.
 
---entry "index"
+<pre>
+--entry <index>
 
         Print out the metadata for a single entry in the directory.
 
---filepos "index"
---name "index"
---size "index"
+--filepos <index>
+--name <index>
+--size <index>
 
         Print a single data point for an entry in the directory.
 
---find="name"
+--find=<name>
 
         Find and print any matching lump names. Will also match any lump 
-        names that begin with "name"
+        names that begin with <name>
 
 --length
 
@@ -42,15 +43,16 @@ filename must always be the last parameter on the command-line.
         metadata. The "indexed" version prints the lump number before 
         the metadata.
 
---list="begin" "end"
+--list=<begin> <end>
 
-        Print out the part of the directory between entries "begin" and 
-        "end" inclusive. Otherwise behaves as "--list"
+        Print out the part of the directory between entries <begin> and 
+        <end> inclusive. Otherwise behaves as "--list"
 
---save "index"
+--save <index>
 
         save the lump as a binary file named with its name from the 
         directory and a ".binary" extension
+</pre>
 
 ## Details
 
