@@ -16,22 +16,28 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>."""
 import sys
 
+# TODO: Patcher works with lump formats and should not open a WAD by 
+# itself. It should invoke Wadder functions for that purpose, otherwise 
+# work only with '.lmp' files directly.
 def main():
     filename = sys.argv[-1]
     header = get_header(filename)
 
 def get_header(filename):
     with open(filename, 'rb') as file:
-        width = int.from_bytes(file.read(2), byteorder='little')%256
+        width = int.from_bytes(file.read(2), byteorder='little')
         height = int.from_bytes(file.read(2), byteorder='little')
         leftoffset = int.from_bytes(file.read(2), byteorder='little')
         topoffset = int.from_bytes(file.read(2), byteorder='little')
-        columnofs = int.from_bytes(file.read(4 * width), byteorder='little')
+        columnofs = int.from_bytes(file.read(4 * (width%256)), byteorder='little')
     print(width)
     print(height)
     print(leftoffset)
     print(topoffset)
     print(columnofs)
+    if width > columnofs:
+        print("patcher: width was truncated to 256")
+        print("patcher: this file is likely not a patch lump")
 
 if __name__ == "__main__":
     try: main()

@@ -14,71 +14,103 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>."""
+import os
 import sys
 
 def main():
-    filename = sys.argv[-1]
-    if len(sys.argv) > 2: argcmd = sys.argv[1]
-    else: argcmd = ""
-    if len(sys.argv) > 3: argnum = int(sys.argv[2])
-    else: argnum = 0
+    args = sys.argv
+    if os.path.isfile(args[-1]):
+        filename = args[-1]
+    else:
+        filename = None
     header = get_header(filename)
     directory = get_directory(filename,
                               header['infotableofs'],
                               header['numlumps'])
-    if argcmd == "--entry":
-        entry = directory[argnum]
-        for value in entry.values():
-            print(value, end=" ")
-        print()
-    elif argcmd in ("--filepos", "--name", "--size"):
-        entry = directory[argnum]
-        print(entry[argcmd[2:]])
-    elif argcmd[0:7] == "--find=":
-        match = argcmd[7:]
-        for i, entry in enumerate(directory):
-            if entry['name'][:len(match)] == match:
-                print(str(i) + ":", end=" ")
+    # print any header information requested
+    for key in header.keys():
+        if "--" + key in args:
+            print(header[key])
+    # find all command flags and follow orders
+    # TODO: what if "directory" does not exist?
+    index, endex = 0, 0
+    for arg in sys.argv:
+        if arg[0:7] == "--data=":
+            name = arg[7:]
+            print(get_data(directory, index, name))
+        elif arg[0:6] == "--end=":
+            endex = int(arg[6:])
+        elif arg[0:8] == "--entry=":
+            index = int(arg[8:])
+            entry = directory[index]
+            for value in entry.values():
+                print(value, end=" ")
+            print()
+        elif arg[0:7] == "--find=":
+            match = arg[7:]
+            for i, entry in enumerate(directory):
+                if entry['name'][:len(match)] == match:
+                    if "--indexed" in args:
+                        print(i, end=":")
+                    for value in entry.values():
+                        print(value, end=" ")
+                    print()
+                    if "--save" in args:
+                        save_lump(filename, entry)
+        elif arg[0:8] == "--index=":
+            index = int(arg[8:])
+            endex = index
+        elif arg == "--length":
+            print(len(directory))
+        elif arg == "--list-range":
+            for i in range(index, endex+1):
+                entry = directory[i]
+                if "--indexed" in args:
+                    print(i, end=": ")
                 for value in entry.values():
                     print(value, end=" ")
                 print()
-    elif argcmd == "--header":
-        pass
-    elif argcmd == "--length":
-        print(len(directory))
-    elif argcmd in ("--list", "--indexed-list"):
-        for i, entry in enumerate(directory):
-            if argcmd == "--indexed-list":
-                print(i, end=": ")
-            for value in entry.values():
-                print(value, end=" ")
-            print()
-    elif argcmd[0:7] == "--list=":
-        start = int(argcmd[7:])
-        stop = argnum+1
-        for i in range(start, stop):
-            entry = directory[i]
-            if argcmd[0:15] == "--indexed-list=":
-                print(i, end=": ")
-            for value in entry.values():
-                print(value, end=" ")
-            print()
-    elif argcmd == "--save":
-        entry = directory[argnum]
-        save_lump(filename, entry['filepos'], entry['size'], entry['name'])
-    else:
-        print("wadder: raw header", header['raw'])
-        if header['raw'][0:4] == b"IWAD":
+                if "--save" in args:
+                    save_lump(filename, entry)
+        elif arg == "--list":
+            for i, entry in enumerate(directory):
+                if "--indexed" in args:
+                    print(i, end=": ")
+                for value in entry.values():
+                    print(value, end=" ")
+                print()
+        elif arg[0:7] == "--save=":
+            index = int(arg[7:])
+            entry = directory[index]
+            save_lump(filename, entry)
+    # cordially parse results if no commands are given
+    if len(sys.argv) < 3:
+        if header['header'][0:4] == b"IWAD":
             print("wadder: 'Internal WAD' signature identified")
-        elif header['raw'][0:4] == b"PWAD":
+        elif header['header'][0:4] == b"PWAD":
             print("wadder: 'Patch WAD' signature identified")
-        elif header['raw'][1:4] == b"WAD":
+        elif header['header'][1:4] == b"WAD":
             print("wadder: non-standard WAD signature")
         else:
             print("wadder: file does not have a WAD signature")
-        print_header(header)
+        parse_header(header)
 
-def print_header(header):
+def get_data(directory, index, name):
+    """Return data for an entry in the directory
+
+    The argument 'directory' must be a table of dictionaries and
+    'index' must be an integer within the length of the directory.
+    'name' may be any string, but an entry in a WAD directory
+    normally only has 'filpos', 'size', and 'name' data."""
+    entry = directory[index]
+    if name in entry:
+        return entry[name]
+    else:
+        return False
+
+def parse_header(header):
+    """Print header information in a human-readable way."""
+    print("raw header:", header['header'])
     print("signature:", header['identification'])
     print("total number of lumps:", header['numlumps'])
     print("location of directory:", header['infotableofs'])
@@ -91,7 +123,7 @@ def get_directory(filename, offset, numlumps):
             for i in range(numlumps):
                 filepos = int.from_bytes(file.read(4), byteorder='little')
                 size = int.from_bytes(file.read(4), byteorder='little')
-                name = file.read(8).decode()
+                name = file.read(8).decode('ascii')
                 entry = dict(filepos=filepos,size=size,name=name)
                 directory.append(entry)
             return tuple(directory)
@@ -102,14 +134,19 @@ def get_header(filename):
     ident = header[0:4].decode()
     nlumps = int.from_bytes(header[4:8], byteorder='little')
     offs = int.from_bytes(header[8:12], byteorder='little')
-    return dict(identification=ident,numlumps=nlumps,infotableofs=offs,raw=header)
+    return dict(identification=ident,numlumps=nlumps,infotableofs=offs,header=header)
 
-def save_lump(filename, filepos, size, name):
-    name = name + ".binary"
+def save_lump(filename, entry):
+    """Find and save a lump as a binary file.
+
+    The file seek position, bytesize, and filename for the lump is taken
+    from an entry dictionary like those generated by function
+    'get_directory'."""
+    name = entry['name'].rstrip("\0") + ".lmp"
     print("wadder: saving lump data to binary file", name)
     with open(filename, 'rb') as file:
-        file.seek(filepos)
-        lump = file.read(size)
+        file.seek(entry['filepos'])
+        lump = file.read(entry['size'])
         newfile = open(name, 'w+b')
         newfile.write(lump)
         newfile.close()
