@@ -16,20 +16,20 @@ depends on apporopriate tags passed as command-line parameters. A
 filename must always be the last parameter on the command-line.
 
 <pre>
---entry <index>
+--entry &lt;index>
 
         Print out the metadata for a single entry in the directory.
 
---filepos <index>
---name <index>
---size <index>
+--filepos &lt;index>
+--name &lt;index>
+--size &lt;index>
 
         Print a single data point for an entry in the directory.
 
---find=<name>
+--find=&lt;name>
 
         Find and print any matching lump names. Will also match any lump 
-        names that begin with <name>
+        names that begin with &lt;name>
 
 --length
 
@@ -43,12 +43,12 @@ filename must always be the last parameter on the command-line.
         metadata. The "indexed" version prints the lump number before 
         the metadata.
 
---list=<begin> <end>
+--list=&lt;begin> &lt;end>
 
-        Print out the part of the directory between entries <begin> and 
-        <end> inclusive. Otherwise behaves as "--list"
+        Print out the part of the directory between entries &lt;begin> and 
+        &lt;end> inclusive. Otherwise behaves as "--list"
 
---save <index>
+--save &lt;index>
 
         save the lump as a binary file named with its name from the 
         directory and a ".binary" extension
