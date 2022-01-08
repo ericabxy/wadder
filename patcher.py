@@ -30,12 +30,12 @@ def get_header(filename):
         leftoffset = int.from_bytes(file.read(2), byteorder='little')
         topoffset = int.from_bytes(file.read(2), byteorder='little')
         columnofs = int.from_bytes(file.read(4 * (width%256)), byteorder='little')
-    print(width)
-    print(height)
-    print(leftoffset)
-    print(topoffset)
-    print(columnofs)
-    if width > columnofs:
+    print("width:", width)
+    print("height:", height)
+    print("leftoffset:", leftoffset)
+    print("topoffset:", topoffset)
+    print("columnoffset:", columnofs)
+    if width > 256:
         print("patcher: width was truncated to 256")
         print("patcher: this file is likely not a patch lump")
 
