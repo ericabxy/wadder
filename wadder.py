@@ -27,17 +27,21 @@ def main():
     directory = get_directory(filename,
                               header['infotableofs'],
                               header['numlumps'])
+    datakeys = ["filepos", "size", "name"]
     # print any header information requested
     for key in header.keys():
-        if "--" + key in args:
+        if "--header-" + key in args:
             print(header[key])
-    # find all command flags and follow orders
+    # process all command flags in order
     # TODO: what if "directory" does not exist?
-    index, endex = 0, 0
+    index, endex = 0, len(directory)-1
     for arg in sys.argv:
         if arg[0:7] == "--data=":
-            name = arg[7:]
-            print(get_data(directory, index, name))
+            key = arg[7:]
+            if key not in datakeys:
+                datakeys.append(key)
+        elif arg[0:12] == "--data-only=":
+            datakeys = [arg[12:]]
         elif arg[0:6] == "--end=":
             endex = int(arg[6:])
         elif arg[0:8] == "--entry=":
@@ -51,38 +55,33 @@ def main():
             for i, entry in enumerate(directory):
                 if entry['name'][:len(match)] == match:
                     if "--indexed" in args:
-                        print(i, end=":")
-                    for value in entry.values():
-                        print(value, end=" ")
+                        print(i, end=": ")
+                    for data in get_data(entry, datakeys):
+                        print(data, end=" ")
                     print()
                     if "--save" in args:
-                        save_lump(filename, entry)
+                        lump = get_lump(filename, entry)
+                        save_lump(lump, entry['name'])
         elif arg[0:8] == "--index=":
             index = int(arg[8:])
-            endex = index
         elif arg == "--length":
             print(len(directory))
-        elif arg == "--list-range":
+        elif arg == "--list":
             for i in range(index, endex+1):
                 entry = directory[i]
                 if "--indexed" in args:
                     print(i, end=": ")
-                for value in entry.values():
-                    print(value, end=" ")
+                for data in get_data(entry, datakeys):
+                    print(data, end=" ")
                 print()
                 if "--save" in args:
-                    save_lump(filename, entry)
-        elif arg == "--list":
-            for i, entry in enumerate(directory):
-                if "--indexed" in args:
-                    print(i, end=": ")
-                for value in entry.values():
-                    print(value, end=" ")
-                print()
+                    lump = get_lump(filename, entry)
+                    save_lump(lump, entry['name'])
         elif arg[0:7] == "--save=":
             index = int(arg[7:])
             entry = directory[index]
-            save_lump(filename, entry)
+            lump = get_lump(filename, entry)
+            save_lump(lump, entry['name'])
     # cordially parse results if no commands are given
     if len(sys.argv) < 3:
         if header['header'][0:4] == b"IWAD":
@@ -93,29 +92,18 @@ def main():
             print("wadder: non-standard WAD signature")
         else:
             print("wadder: file does not have a WAD signature")
-        parse_header(header)
+        print_header(header)
 
-def get_data(directory, index, name):
-    """Return data for an entry in the directory
-
-    The argument 'directory' must be a table of dictionaries and
-    'index' must be an integer within the length of the directory.
-    'name' may be any string, but an entry in a WAD directory
-    normally only has 'filpos', 'size', and 'name' data."""
-    entry = directory[index]
-    if name in entry:
-        return entry[name]
-    else:
-        return False
-
-def parse_header(header):
-    """Print header information in a human-readable way."""
-    print("raw header:", header['header'])
-    print("signature:", header['identification'])
-    print("total number of lumps:", header['numlumps'])
-    print("location of directory:", header['infotableofs'])
+def get_data(entry, keys):
+    """Return a list of data from one entry."""
+    datalist = []
+    for key in keys:
+        if key in entry:
+            datalist.append(entry[key])
+    return tuple(datalist)
 
 def get_directory(filename, offset, numlumps):
+    """Return the directory as a list of dictionaries."""
     with open(filename, 'rb') as file:
         if file.read(4)[1:4] == b"WAD":
             file.seek(offset)
@@ -124,32 +112,44 @@ def get_directory(filename, offset, numlumps):
                 filepos = int.from_bytes(file.read(4), byteorder='little')
                 size = int.from_bytes(file.read(4), byteorder='little')
                 name = file.read(8).decode('ascii')
-                entry = dict(filepos=filepos,size=size,name=name)
+                entry = dict(
+                        index=str(i)+":",
+                        filepos=filepos,
+                        size=size,
+                        name=name)
                 directory.append(entry)
             return tuple(directory)
 
 def get_header(filename):
+    """Return each part of the file header in a dictionary."""
     with open(filename, 'rb') as file:
         header = file.read(12)
     ident = header[0:4].decode()
     nlumps = int.from_bytes(header[4:8], byteorder='little')
     offs = int.from_bytes(header[8:12], byteorder='little')
-    return dict(identification=ident,numlumps=nlumps,infotableofs=offs,header=header)
+    return dict(header=header,identification=ident,
+                numlumps=nlumps,infotableofs=offs)
 
-def save_lump(filename, entry):
-    """Find and save a lump as a binary file.
-
-    The file seek position, bytesize, and filename for the lump is taken
-    from an entry dictionary like those generated by function
-    'get_directory'."""
+def get_lump(filename, entry):
+    """Return lump data as binary data."""
     name = entry['name'].rstrip("\0") + ".lmp"
-    print("wadder: saving lump data to binary file", name)
     with open(filename, 'rb') as file:
         file.seek(entry['filepos'])
         lump = file.read(entry['size'])
-        newfile = open(name, 'w+b')
-        newfile.write(lump)
-        newfile.close()
+    return lump
+
+def print_header(header):
+    """Print header information in a human-readable way."""
+    print("raw header:", header['header'])
+    print("signature:", header['identification'])
+    print("total number of lumps:", header['numlumps'])
+    print("location of directory:", header['infotableofs'])
+
+def save_lump(data, name, ext=".lmp"):
+    filename = name.rstrip("\0") + ext
+    print("wadder: saving lump data to binary file", filename)
+    with open(filename, 'w+b') as file:
+        file.write(data)
 
 if __name__ == "__main__":
     try: main()

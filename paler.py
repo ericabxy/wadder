@@ -46,7 +46,10 @@ def saveas_lump(file, name):
             fout.write(color)
 
 def saveas_pixmap(file, name):
-    """Save the color information in Netpbm format."""
+    """Save a palette to a PPM file.
+
+    PPM is a minimal pixmap image format and Paler can save each color
+    in the palette as a pixel in the image."""
     with open(name, 'wb') as fout:
         fout.write(b"P6 ")
         fout.write(b"16 16 ")
