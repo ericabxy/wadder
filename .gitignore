@@ -1,3 +1,4 @@
+*.pgm
 *.ppm
 *.pyc
 *.swp

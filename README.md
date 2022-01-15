@@ -26,7 +26,7 @@ must always be the last parameter on the command-line.
 
 The "directory" is a list of every lump in the WAD with associated 
 metadata. An "entry" contains all metadata for a lump in the directory. 
-An "index" is a number of an entry in the directory. Use the 
+An "index" is the number of an entry in the directory. Use the 
 command-line paramaters as described below to control what Wadder does 
 with the directory, the metadata, and the lump data.
 
@@ -39,8 +39,8 @@ with the directory, the metadata, and the lump data.
         Add the specified key to the list of metadata to print for each 
         entry. By default for each entry Wadder will print all three 
         metadata, so normally this is not needed. However it can be used 
-        to re-add to the list of metadata if any key was removed with 
-        "--data-only=" or "--not-data=".
+        to re-add to the list of metadata if it was removed with 
+        "--data-only=".
 
 --data-only=filepos
 --data-only=size
@@ -57,8 +57,8 @@ with the directory, the metadata, and the lump data.
 
 --entry=N
 
-        Print all metadata for a single entry in the directory indexed 
-        by N.
+        Print all metadata for a single entry in the directory at index 
+        N.
 
 --find=string
 
@@ -74,8 +74,8 @@ with the directory, the metadata, and the lump data.
 
 --index=N
 
-        Set the index of the (first) directory entry that will be looked 
-        up.
+        Set the first entry to index when using "--list". Defaults to 
+        the first entry [0].
 
 --indexed
 
@@ -91,8 +91,8 @@ with the directory, the metadata, and the lump data.
         Print each entry in the directory starting with "--index=" and 
         ending with "--end=". Each entry is printed on a new line with a 
         " " separator between each metadata. If the "--indexed" flag is 
-        set, prepend each entry with its index in the directory. If 
-        "--end=" is not set this will print only one entry.
+        set, prepend each entry with its index in the directory. If the 
+        "--save" flag is set, save each entry listed as a raw lump file.
 
 --save
 
