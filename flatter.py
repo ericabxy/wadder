@@ -21,19 +21,23 @@ import sys
 def main():
     filename = sys.argv[-1]
     if os.path.isfile(filename):
-        if "--save-graymap" in sys.argv:
-            flat = load_flat(filename)
-            name = os.path.splitext(filename)[0]
-            print("flatter: saving color values to", name + ".pgm")
-            save_graymap(flat, name + ".pgm")
-        elif "--save-pixmap" in sys.argv:
-            flat = load_flat(filename)
-            colormap = load_colors("data/pal0.txt")
-            name = os.path.splitext(filename)[0]
-            print("flatter: saving colormapped values to", name + ".ppm")
-            save_pixmap(flat, colormap, name + ".ppm")
-        else:
+        if len(sys.argv) < 3:
             check_file(filename)
+        colormap = graymap()
+        for arg in sys.argv:
+            if arg[0:14] == "--read-hexmap=":
+                path = arg[14:]
+                colormap = read_hexmap(path)
+            elif arg == "--save-graymap":
+                flat = load_flat(filename)
+                name = os.path.splitext(filename)[0]
+                print("flatter: saving color values to", name + ".pgm")
+                save_graymap(flat, name + ".pgm")
+            elif arg == "--save-pixmap":
+                flat = load_flat(filename)
+                name = os.path.splitext(filename)[0]
+                print("flatter: saving colormapped values to", name + ".ppm")
+                save_pixmap(flat, colormap, name + ".ppm")
     else:
         print("flatter: not a file '" + filename + "'")
 
@@ -46,17 +50,26 @@ def check_file(filename):
         print("flatter: filesize", filesize)
         print("flatter: this is likely not a 'flat' lump")
 
-def load_colors(filename):
+def graymap():
+    """Return 256 hex-encoded grayscale values."""
     map = []
-    with open(filename) as file:
-        for i in range(256):
-            map.append(file.readline())
+    for i in range(256):
+        hexval = hex(i)[2:].zfill(2)
+        map.append(hexval + hexval + hexval + "\n")
     return map
 
 def load_flat(filename):
     """Return 4096 bytes from a binary file."""
     with open(filename, 'rb') as file:
         return file.read(4096)
+
+def read_hexmap(filename):
+    """Return 256 hex-encoded values read from a file."""
+    map = []
+    with open(filename) as file:
+        for i in range(256):
+            map.append(file.readline())
+    return map
 
 def save_graymap(bytemap, name):
     """Save bytes to a 4096-pixel Portable GrayMap."""
