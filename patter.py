@@ -32,14 +32,14 @@ def main():
                 name = os.path.splitext(filename)[0]
                 save_pixmap(picture, name + ".ppm", width, height)
 
-def check_file(filename):
+def check_file(filename, maxw=256):
     with open(filename, 'rb') as file:
         width = int.from_bytes(file.read(2), byteorder='little')
         height = int.from_bytes(file.read(2), byteorder='little')
         leftoffset = int.from_bytes(file.read(2), byteorder='little')
         topoffset = int.from_bytes(file.read(2), byteorder='little')
         columnofs = []
-        for i in range(width % 256):
+        for i in range(width % maxw):
             columnofs.append(int.from_bytes(file.read(4), byteorder='little'))
     print("width:", width)
     print("height:", height)
@@ -49,27 +49,27 @@ def check_file(filename):
     for ofs in columnofs:
         print(ofs, end=" ")
     print()
-    with open(filename, 'rb') as file:
-        for i, offset in enumerate(columnofs):
-            print("column:", i)
-            file.seek(offset)
-            topdelta = 0
-            while topdelta < 255:  # read posts until terminator
-                topdelta = int.from_bytes(file.read(1), byteorder='little')
-                length = int.from_bytes(file.read(1), byteorder='little')
-                unused1 = int.from_bytes(file.read(1), byteorder='little')
-                data = file.read(length)
-                unused2 = int.from_bytes(file.read(1), byteorder='little')
-                if topdelta < 255:
-                    print("  topdelta:", topdelta)
-                    print("  length:", length)
-                    for j in range(length):
-                        if topdelta < 255:
-                            print("    post", j, end=": ")
-                            print(bin(data[j])[2:])
-    if width > 256:
-        print("patter: width was truncated to 256")
-        print("patter: this file is likely not a patch lump")
+    if width > maxw:
+        print("patter: width greater than", maxw, "limit; aborting")
+    else:
+        with open(filename, 'rb') as file:
+            for i, offset in enumerate(columnofs):
+                print("column:", i)
+                file.seek(offset)
+                topdelta = 0
+                while topdelta < 255:  # read posts until terminator
+                    topdelta = int.from_bytes(file.read(1), byteorder='little')
+                    length = int.from_bytes(file.read(1), byteorder='little')
+                    unused1 = int.from_bytes(file.read(1), byteorder='little')
+                    data = file.read(length)
+                    unused2 = int.from_bytes(file.read(1), byteorder='little')
+                    if topdelta < 255:
+                        print("  topdelta:", topdelta)
+                        print("  length:", length)
+                        for j in range(length):
+                            if topdelta < 255:
+                                print("    post", j, end=": ")
+                                print(bin(data[j])[2:])
 
 def get_header(filename):
     """Return each part of the file header in a dictionary."""
