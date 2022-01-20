@@ -25,44 +25,25 @@ def main():
             check_file(filename)
         index = 0
         for arg in sys.argv:
-            if arg[0:11] == "--save-pal=":
-                index = int(arg[11:])
+            if arg[0:8] == "--index=":
+                index = int(arg[8:])
+            elif arg == "--print":
+                file.seek(index * 768)
+                print(file.read(768))
+            elif arg == "--save-colors":
                 with open(filename, 'rb') as file:
                     file.seek(index*768)
-                    pal = file.read(768)
-                save_lump(pal, "pal" + str(index) + ".lmp")
-                save_palmap(pal, "pal" + str(index) + ".ppm")
-            elif arg[0:7] == "--lump=":
-                lumpname = arg[7:]
-                print("paller: reading", lumpname, "for color mapping")
-                with open(lumpname, 'rb') as file:
-                    bytemap = file.read()
-                if "--save-pixmap" in sys.argv:
-                    with open(filename, 'rb') as file:
-                        pixels = []
-                        origin = index * 768
-                        for b in bytemap:
-                            offset = b * 3
-                            file.seek(origin + offset)
-                            pixels.append(file.read(3))
-                    name = os.path.splitext(lumpname)[0]
-                    print("paller: saving remapped pixels to", name + ".ppm")
-#                    save_graymap(bytemap, name + ".pgm")
-                    save_pixmap(pixels, name + ".ppm")
-            elif arg[0:10] == "--palette=":
-                index = int(arg[10:])
-                print("paller: selecting palette", index, "from", filename)
-        if os.path.getsize(filename)%768 == 0:
-            pals = os.path.getsize(filename)//768
-            with open(filename, 'rb') as file:
-                if "--file-lumps" in sys.argv:
-                    for p in range(pals):
-                        print("paller: saving values to pal" + str(p) + ".lmp")
-                        saveas_lump(file, "pal" + str(p) + ".lmp")
-                elif "--file-hexmaps" in sys.argv:
-                    for p in range(pals):
-                        print("paller: saving values to pal" + str(p) + ".txt")
-                        saveas_text(file, "pal" + str(p) + ".txt")
+                    colors = []
+                    for i in range(256):
+                        colors.append(file.read(3))
+                if "--hexmap" in sys.argv:
+                    name = os.path.splitext(filename)[0] + str(index) + ".txt"
+                    print("paller: saving hex values", index, "to", name)
+                    save_pixmap(colors, name)
+                if "--pixmap" in sys.argv:
+                    name = os.path.splitext(filename)[0] + str(index) + ".ppm"
+                    print("paller: saving colors", index, "to", name)
+                    save_hexmap(colors, name)
     else:
         print("paller: not a file '" + filename + "'")
 
@@ -87,54 +68,25 @@ def save_graymap(bytemap, name):
         file.write(b"255 ")
         file.write(bytemap)
 
-def save_lump(bytes, name):
+def save_lump(bytemap, name):
     """Save palette as lump data."""
     with open(name, 'wb') as file:
-        file.write(bytes)
-
-def saveas_lump(file, name):
-    """Save palette as lump data."""
-    with open(name, 'wb') as fout:
-        for i in range(256):
-            color = file.read(3)
-            fout.write(color)
-
-def save_palmap(pixmap, name):
-    """Save remapped bytes to a Portable PixMap file."""
-    with open(name, 'wb') as file:
-        file.write(b"P6 ")
-        file.write(b"16 16 ")
-        file.write(b"255 ")
-        file.write(pixmap)
+        file.write(bytemap)
 
 def save_pixmap(pixels, name):
     """Save remapped bytes to a Portable PixMap file."""
     with open(name, 'wb') as file:
         file.write(b"P6 ")
-        file.write(b"64 64 ")
+        file.write(b"16 16 ")
         file.write(b"255 ")
         for pixel in pixels:
             file.write(pixel)
 
-def saveas_pixmap(file, name):
-    """Save a palette to a Portable PixMap file.
-
-    Paller saves each color in the palette as a pixel in the image.
-    """
-    with open(name, 'wb') as fout:
-        fout.write(b"P6 ")
-        fout.write(b"16 16 ")
-        fout.write(b"255 ")
-        for i in range(256):
-            color = file.read(3)
-            fout.write(color)
-
-def saveas_text(file, name):
-    """Save the color information as hex values."""
-    with open(name, 'w') as fout:
-        for i in range(256):
-            color = file.read(3)
-            fout.write(color.hex() + "\n")
+def save_hexmap(colormap, name):
+    """Save each color value in hexadecimal."""
+    with open(name, 'w') as file:
+        for color in colormap:
+            file.write(color.hex() + "\n")
 
 if __name__ == "__main__":
     try: main()
