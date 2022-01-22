@@ -12,99 +12,27 @@ store game-data separately from the executable.
 
 Wadder uses standard Python libraries.
 
-## Usage
+## Usage: wadder.py
 
-The main script is "wadder.py". Below is some quick-and-dirty 
-documentation that will eventually be included as command-line "help" 
-output.
+- <code>python3 wadder.py --help</code>
+- <code>python3 wadder.py "filename"</code>
+- <code>python3 wadder.py "parameters" "filename"</code>
 
-Passing a filename as the sole command-line parameter results in a 
-printout of the file's WAD header information along with a short message 
-about whether the parser thinks it is a valid WAD. More specific 
-features are accessed via additional command-line parameters. A filename 
-must always be the last parameter on the command-line.
+If given a filename, this script will determine if the file has a valid 
+WAD header and print the header information. The last parameter on the 
+command line is taken as the filename. Other capabilities of this script 
+are accessed via additional command-line parameters.
 
-The "directory" is a list of every lump in the WAD with associated 
-metadata. An "entry" contains all metadata for a lump in the directory. 
-An "index" is the number of an entry in the directory. Use the 
-command-line paramaters as described below to control what Wadder does 
-with the directory, the metadata, and the lump data.
+- examples:
+  + <code>python3 wadder.py --list Valiant.wad</code>
+  + <code>python3 wadder.py --index=100 --end=120 --list freedm.wad</code>
+  + <code>python3 wadder.py --indexed --find=VILE freedoom2.wad</code>
+  + <code>python3 wadder.py --find=PLAYPAL --save aaliens.wad</code>
 
-<pre>
-
---data=filepos
---data=size
---data=name
-
-        Add the specified key to the list of metadata to print for each 
-        entry. By default for each entry Wadder will print all three 
-        metadata, so normally this is not needed. However it can be used 
-        to re-add to the list of metadata if it was removed with 
-        "--data-only=".
-
---data-only=filepos
---data-only=size
---data-only=name
-
-        Clear the list of metadata to print for each entry, and replace 
-        it with only the key specified. If more metadata is needed, use 
-        "--data=" to add more to the list.
-
---end=N
-
-        Set the last entry to index (inclusive) when using "--list". 
-        Defaults to the last entry in the directory.
-
---entry=N
-
-        Print all metadata for a single entry in the directory at index 
-        N.
-
---find=string
-
-        Find and print the entry for any lumps which have a name 
-        starting with "string". Also save each matching lump if the 
-        "--save" flag is set.
-
---header-identification
---header-numlumps
---header-infotableofs
-
-        Print the requested header information.
-
---index=N
-
-        Set the first entry to index when using "--list". Defaults to 
-        the first entry [0].
-
---indexed
-
-        Prepend each entry listed by printing its index before the 
-        metadata.
-
---length
-
-        Print the length of the directory.
-
---list
-
-        Print each entry in the directory starting with "--index=" and 
-        ending with "--end=". Each entry is printed on a new line with a 
-        " " separator between each metadata. If the "--indexed" flag is 
-        set, prepend each entry with its index in the directory. If the 
-        "--save" flag is set, save each entry listed as a raw lump file.
-
---save
-
-        Save the lump data from each entry listed as a binary file with 
-        the ".lmp" extension.
-
---save=N
-
-        Save the lump data from the entry specified by N as a binary 
-        file with the ".lmp" extension.
-
-</pre>
+From the header information, the script locates and reads a directory of 
+entries that refer to "lumps" contained in the WAD. It can print 
+metadata about each lump, zero in on a specific range of lumps, search 
+lump names, and save lumps as binary files.
 
 ## Details
 
