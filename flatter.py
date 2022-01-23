@@ -47,8 +47,7 @@ def check_file(filename):
     if filesize == 4096:
         print("flatter: filesize", filesize, "may be a 'flat' lump")
     else:
-        print("flatter: filesize", filesize)
-        print("flatter: this is likely not a 'flat' lump")
+        print("flatter: filesize", filesize, "likely not a 'flat' lump")
 
 def graymap():
     """Return 256 hex-encoded grayscale values."""
@@ -85,9 +84,7 @@ def save_pixmap(bytemap, colormap, name):
         file.write(b"64 64 ")
         file.write(b"255 ")
         for byte in bytemap:
-            print(byte, end="->")
             color = colormap[byte]
-            print(bytes.fromhex(color))
             file.write(bytes.fromhex(color))
 
 if __name__ == "__main__":

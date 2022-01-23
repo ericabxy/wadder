@@ -28,22 +28,28 @@ def main():
             if arg[0:8] == "--index=":
                 index = int(arg[8:])
             elif arg == "--print":
-                file.seek(index * 768)
-                print(file.read(768))
-            elif arg == "--save-colors":
                 with open(filename, 'rb') as file:
+                    file.seek(index * 768)
+                    for i in range(256):
+                        print(file.read(3).hex())
+            elif arg[0:7] == "--save-":
+                with open(filename, 'rb') as file:
+                    file.seek(index*768)
+                    bytemap = file.read(768)
                     file.seek(index*768)
                     colors = []
                     for i in range(256):
                         colors.append(file.read(3))
-                if "--hexmap" in sys.argv:
-                    name = os.path.splitext(filename)[0] + str(index) + ".txt"
-                    print("paller: saving hex values", index, "to", name)
-                    save_pixmap(colors, name)
-                if "--pixmap" in sys.argv:
-                    name = os.path.splitext(filename)[0] + str(index) + ".ppm"
-                    print("paller: saving colors", index, "to", name)
-                    save_hexmap(colors, name)
+                name = os.path.splitext(filename)[0] + str(index)
+                if arg == "--save-hexmap":
+                    print("paller: saving hex values", index, "to", name + ".txt")
+                    save_hexmap(colors, name + ".txt")
+                if arg == "--save-lump":
+                    print("paller: saving lump data", index, "to", name + ".lmp")
+                    save_lump(bytemap, name + ".lmp")
+                if arg == "--save-pixmap" in sys.argv:
+                    print("paller: saving colors", index, "to", name + ".ppm")
+                    save_pixmap(colors, name + ".ppm")
     else:
         print("paller: not a file '" + filename + "'")
 
@@ -59,6 +65,14 @@ def check_file(filename):
     else:
         print("paller: filesize", filesize)
         print("paller: this is likely not a palette lump")
+
+def read_hexmap(filename):
+    """Return 256 hex-encoded values read from a file."""
+    map = []
+    with open(filename) as file:
+        for i in range(256):
+            map.append(file.readline())
+    return map
 
 def save_graymap(bytemap, name):
     """Save bytes to a 4096-pixel Portable GrayMap."""
