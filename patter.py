@@ -35,6 +35,7 @@ def main():
                 save_pixmap(pixmap, header['width'], header['height'], name)
 
 def get_bytemap(header, columns):
+    """Render the patch from data and include a transparency mask."""
     width, height = header['width'], header['height']
     bytemap = bytearray(width * height)
     bitmask = [0 for i in range(width * height)]
@@ -47,6 +48,7 @@ def get_bytemap(header, columns):
     return bytemap, bitmask
 
 def get_pixmap(bytemap, bitmask, colormap):
+    """Render a pixmap using color values and a transparency mask."""
     pixmap = bytearray()
     for b, m in zip(bytemap, bitmask):
         if m == 0:
@@ -56,6 +58,7 @@ def get_pixmap(bytemap, bitmask, colormap):
     return pixmap
 
 def graymap():
+    """Return a 256-shade graymap to substitute a colormap."""
     map = bytearray()
     for i in range(256):
         map.extend((i, i, i))
@@ -98,6 +101,7 @@ def load_patch(filename, maxw=256):
     return header, columns
 
 def save_pixmap(bytemap, width, height, name):
+    """Save binary data to a Portable PixMap file."""
     with open(name, 'wb') as file:
         file.write(b"P6 ")
         file.write(bytes(str(width) + " ", 'utf_8'))
