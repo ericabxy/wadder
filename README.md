@@ -14,7 +14,6 @@ Wadder uses standard Python libraries.
 
 ## Usage: wadder.py
 
-- <code>python3 wadder.py --help</code>
 - <code>python3 wadder.py "filename"</code>
 - <code>python3 wadder.py "parameters" "filename"</code>
 
@@ -29,10 +28,37 @@ are accessed via additional command-line parameters.
   + <code>python3 wadder.py --indexed --find=VILE freedoom2.wad</code>
   + <code>python3 wadder.py --find=PLAYPAL --save aaliens.wad</code>
 
-From the header information, the script locates and reads a directory of 
-entries that refer to "lumps" contained in the WAD. It can print 
-metadata about each lump, zero in on a specific range of lumps, search 
-lump names, and save lumps as binary files.
+The script can list the metadata for every entry in the WAD directory, 
+or limit the list to a range indicated by "--index=" and "--end=". It 
+can also find entries by name with "--find=" and it will save the lump 
+data for every entry listed/found as a ".lmp" file if you pass the 
+"--save" flag. For more information and features, access the help text 
+using the following flag.
+
+- <code>python3 wadder.py --help</code>
+
+## Usage: paller.py
+
+- <code>python3 paller.py "filename"</code>
+- <code>python3 paller.py --index=13 --save-lump "filename"</code>
+- <code>python3 paller.py --index=9 --save-hexmap "filename"</code>
+- <code>python3 paller.py --index=0 --save-pixmap "filename"</code>
+
+This script works with the 24bpp binary palette PLAYPAL format. It's 
+designed to take a PLAYPAL lump file and split it into its 14 component 
+256-color maps. It can save these as smaller binary lumps, hex values in 
+a text file, or render them as 256-color pixmaps.
+
+## Usage: patter.py
+
+- <code>python3 patter.py "filename"</code>
+- <code>python3 patter.py --save-pixmap "filename"</code>
+- <code>python3 patter.py --colormap=PLAYPAL0.lmp --save-pixmap "filename"</code>
+
+This script works with lump files formatted in DOOM "picture format". It 
+can render the binary data as a 256-color pixmap with a transparency 
+mask. If you do not supply it with a PLAYPAL colormap data lump it will 
+render the image with 256 gray shades instead of the intended colors.
 
 ## Details
 
@@ -46,6 +72,9 @@ files) in the WAD and the location of the lump directory. The directory
 likewise specifies the location, size, and name of every lump in the 
 WAD. These features of the format make it easy to parse all the 
 information contained in a WAD.
+
+Lumps that are extracted from the WAD and saved as ".lmp" files can be 
+worked on using the other scripts in this collection.
 
 ## About the ".lmp" Extension
 
@@ -70,6 +99,6 @@ tell it to.
 
 If new WAD formats are created in the future, Wadder can accomodate 
 them. Wadder recognizes anything with "?WAD" on the first 4 bytes and 
-can be programmed to access a longer header if present. Wadder can be 
+can be programmed to access a longer header if indicated. Wadder can be 
 programmed to collect more metadata from the directory and retrieve it 
 with extended metadata names.
