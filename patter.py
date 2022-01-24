@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Patter - a script for working with DOOM picture format
+"""
+Patter - a script for working with the DOOM picture format
 Copyright 2022 Eric Duhamel
 
 This program is free software: you can redistribute it and/or modify
@@ -13,29 +14,60 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>."""
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 import os
 import sys
 
 def main():
     filename = sys.argv[-1]
     if os.path.isfile(filename):
-        if len(sys.argv) < 3:
-            check_file(filename)
+        header, columns = load_patch(filename)
         colormap = graymap()
         for arg in sys.argv:
             if arg[0:11] == "--colormap=":
                 path = arg[11:]
                 colormap = load_colormap(path)
             elif arg == "--save-pixmap":
-                width, height, left, top, columnofs = parse_header(filename)
-                with open(filename, 'rb') as file:
-                    bytemap, bitmask = get_patch(file, width, height, columnofs)
-                pixmap = convert(bytemap, bitmask, colormap)
-                name = os.path.splitext(filename)[0]
-                save_pixmap(pixmap, width, height, name + ".ppm")
+                bytemap, bitmask = get_bytemap(header, columns)
+                pixmap = get_pixmap(bytemap, bitmask, colormap)
+                name = os.path.splitext(filename)[0] + ".ppm"
+                save_pixmap(pixmap, header['width'], header['height'], name)
 
-def check_file(filename, maxw=256):
+def get_bytemap(header, columns):
+    width, height = header['width'], header['height']
+    bytemap = bytearray(width * height)
+    bitmask = [0 for i in range(width * height)]
+    for i, column in enumerate(columns):
+        for post in column:
+            topdelta = post['topdelta']
+            for j, data in enumerate(post['data']):
+                bytemap[i + (topdelta * width) + (j * width)] = data
+                bitmask[i + (topdelta * width) + (j * width)] = 1
+    return bytemap, bitmask
+
+def get_pixmap(bytemap, bitmask, colormap):
+    pixmap = bytearray()
+    for b, m in zip(bytemap, bitmask):
+        if m == 0:
+            pixmap.extend((255, 0, 255))
+        else:
+            pixmap.extend((colormap[b*3], colormap[b*3+1], colormap[b*3+2]))
+    return pixmap
+
+def graymap():
+    map = bytearray()
+    for i in range(256):
+        map.extend((i, i, i))
+    return map
+
+def load_colormap(filename):
+    """Load a 24bpp color translation map."""
+    with open(filename, 'rb') as file:
+        return file.read(768)
+
+def load_patch(filename, maxw=256):
+    """Return each part of the file header in a dictionary."""
     with open(filename, 'rb') as file:
         width = int.from_bytes(file.read(2), byteorder='little')
         height = int.from_bytes(file.read(2), byteorder='little')
@@ -44,91 +76,26 @@ def check_file(filename, maxw=256):
         columnofs = []
         for i in range(width % maxw):
             columnofs.append(int.from_bytes(file.read(4), byteorder='little'))
-    print("width:", width)
-    print("height:", height)
-    print("leftoffset:", leftoffset)
-    print("topoffset:", topoffset)
-    print("columnofs:", end=" ")
-    for ofs in columnofs:
-        print(ofs, end=" ")
-    print()
+    header = dict(width=width,height=height,leftoffset=leftoffset,
+                  topoffset=topoffset,columnofs=columnofs)
     if width > maxw:
-        print("patter: width greater than", maxw, "limit; aborting")
-    else:
-        with open(filename, 'rb') as file:
-            for i, offset in enumerate(columnofs):
-                print("column:", i)
-                file.seek(offset)
-                topdelta = 0
-                while topdelta < 255:  # read posts until terminator
-                    topdelta = int.from_bytes(file.read(1), byteorder='little')
-                    length = int.from_bytes(file.read(1), byteorder='little')
-                    unused1 = int.from_bytes(file.read(1), byteorder='little')
-                    data = file.read(length)
-                    unused2 = int.from_bytes(file.read(1), byteorder='little')
-                    if topdelta < 255:
-                        print("  topdelta:", topdelta)
-                        print("  length:", length)
-                        for j in range(length):
-                            if topdelta < 255:
-                                print("    post", j, end=": ")
-                                print(bin(data[j])[2:])
-
-def convert(bytemap, bitmask, colormap):
-    pixmap = bytearray()
-    for b, m in zip(bytemap, bitmask):
-        if m == 0:
-            pixmap.append(255)
-            pixmap.append(0)
-            pixmap.append(255)
-        else:
-            pixmap.append(colormap[b*3])
-            pixmap.append(colormap[b*3+1])
-            pixmap.append(colormap[b*3+2])
-    return pixmap
-
-def get_patch(file, width, height, columnofs):
-    bytemap = bytearray(width*height)
-    bitmask = [0 for i in range(width*height)]
-    for i, offset in enumerate(columnofs):
-        file.seek(offset)
-        topdelta = 0
-        while topdelta < 255:  # read posts until terminator
-            topdelta = int.from_bytes(file.read(1), byteorder='little')
-            length = int.from_bytes(file.read(1), byteorder='little')
-            unused1 = int.from_bytes(file.read(1), byteorder='little')
-            data = file.read(length)
-            unused2 = int.from_bytes(file.read(1), byteorder='little')
-            if topdelta < 255:
-                for j in range(length):
-                    bytemap[i+(topdelta*width)+(j*width)] = data[j]
-                    bitmask[i+(topdelta*width)+(j*width)] = 1
-    return bytemap, bitmask
-
-def graymap():
-    map = bytearray()
-    for i in range(256):
-        map.append(i)
-        map.append(i)
-        map.append(i)
-    return map
-
-def load_colormap(filename):
-    """Load a 24bpp color translation map."""
+        print("patter: WARNING width >", maxw, "likely not a patch lump")
     with open(filename, 'rb') as file:
-        return file.read(768)
-
-def parse_header(filename):
-    """Return each part of the file header in a dictionary."""
-    with open(filename, 'rb') as file:
-        width = int.from_bytes(file.read(2), byteorder='little')
-        height = int.from_bytes(file.read(2), byteorder='little')
-        leftoffset = int.from_bytes(file.read(2), byteorder='little')
-        topoffset = int.from_bytes(file.read(2), byteorder='little')
-        columnofs = []
-        for i in range(width % 256):
-            columnofs.append(int.from_bytes(file.read(4), byteorder='little'))
-    return width, height, leftoffset, topoffset, columnofs
+        columns = []  # array to hold picture columns
+        for i, offset in enumerate(columnofs):
+            file.seek(offset)
+            topdelta = 0
+            posts = []  # array to hold posts in column
+            while topdelta < 255:  # read posts until terminator
+                topdelta = int.from_bytes(file.read(1), byteorder='little')
+                length = int.from_bytes(file.read(1), byteorder='little')
+                unused1 = int.from_bytes(file.read(1), byteorder='little')
+                data = file.read(length)
+                unused2 = int.from_bytes(file.read(1), byteorder='little')
+                if topdelta < 255:
+                    posts.append(dict(topdelta=topdelta,data=data))
+            columns.append(posts)
+    return header, columns
 
 def save_pixmap(bytemap, width, height, name):
     with open(name, 'wb') as file:
