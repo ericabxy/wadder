@@ -23,11 +23,13 @@ def main():
     if os.path.isfile(filename):
         if len(sys.argv) < 3:
             check_file(filename)
-        colormap = graymap()
+        colormap, height, width = graymap(), 64, 64
         for arg in sys.argv:
-            if arg[0:14] == "--read-hexmap=":
-                path = arg[14:]
-                colormap = read_hexmap(path)
+            if arg[0:9] == "--height=":
+                height = int(arg[9:])
+            elif arg[0:10] == "--playpal=":
+                path = arg[10:]
+                colormap = load_playpal(path)
             elif arg == "--save-graymap":
                 flat = load_flat(filename)
                 name = os.path.splitext(filename)[0]
@@ -35,9 +37,12 @@ def main():
                 save_graymap(flat, name + ".pgm")
             elif arg == "--save-pixmap":
                 flat = load_flat(filename)
+                pixmap = get_pixmap(flat, colormap)
                 name = os.path.splitext(filename)[0]
                 print("flatter: saving colormapped values to", name + ".ppm")
-                save_pixmap(flat, colormap, name + ".ppm")
+                save_pixmap(pixmap, width, height, name + ".ppm")
+            elif arg[0:8] == "--width=":
+                width = int(arg[8:])
     else:
         print("flatter: not a file '" + filename + "'")
 
@@ -49,26 +54,30 @@ def check_file(filename):
     else:
         print("flatter: filesize", filesize, "likely not a 'flat' lump")
 
+def get_pixmap(bytemap, colormap):
+    """Render a pixmap using color values and a transparency mask."""
+    pixmap = bytearray()
+    for b in bytemap:
+        pixmap.extend((colormap[b*3], colormap[b*3+1], colormap[b*3+2]))
+    return pixmap
+
 def graymap():
-    """Return 256 hex-encoded grayscale values."""
-    map = []
+    """Return a 256-shade graymap to substitute a colormap."""
+    map = bytearray()
     for i in range(256):
-        hexval = hex(i)[2:].zfill(2)
-        map.append(hexval + hexval + hexval + "\n")
+        map.extend((i, i, i))
     return map
 
 def load_flat(filename):
     """Return 4096 bytes from a binary file."""
     with open(filename, 'rb') as file:
-        return file.read(4096)
+#        return file.read(4096)
+        return file.read()
 
-def read_hexmap(filename):
-    """Return 256 hex-encoded values read from a file."""
-    map = []
-    with open(filename) as file:
-        for i in range(256):
-            map.append(file.readline())
-    return map
+def load_playpal(filename):
+    """Load a 24bpp color translation map."""
+    with open(filename, 'rb') as file:
+        return file.read(768)
 
 def save_graymap(bytemap, name):
     """Save bytes to a 4096-pixel Portable GrayMap."""
@@ -78,14 +87,14 @@ def save_graymap(bytemap, name):
         file.write(b"255 ")
         file.write(bytemap)
 
-def save_pixmap(bytemap, colormap, name):
+def save_pixmap(bytemap, width, height, name):
+    """Save binary data to a Portable PixMap file."""
     with open(name, 'wb') as file:
         file.write(b"P6 ")
-        file.write(b"64 64 ")
+        file.write(bytes(str(width) + " ", 'utf_8'))
+        file.write(bytes(str(height) + " ", 'utf_8'))
         file.write(b"255 ")
-        for byte in bytemap:
-            color = colormap[byte]
-            file.write(bytes.fromhex(color))
+        file.write(bytemap)
 
 if __name__ == "__main__":
     try: main()
