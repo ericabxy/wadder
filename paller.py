@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Paller - a module for working with 256-color palettes
+"""
+Paller - a module for working with binary truecolor palettes
 Copyright 2022 Eric Duhamel
 
 This program is free software: you can redistribute it and/or modify
@@ -24,32 +25,26 @@ def main():
         if len(sys.argv) < 3:
             check_file(filename)
         index = 0
+        playpal = load_playpal(filename, index)
         for arg in sys.argv:
             if arg[0:8] == "--index=":
                 index = int(arg[8:])
+                print("paller: using palette", index)
+                playpal = load_playpal(filename, index)
             elif arg == "--print":
-                with open(filename, 'rb') as file:
-                    file.seek(index * 768)
-                    for i in range(256):
-                        print(file.read(3).hex())
+                for i in range(0, 768, 3):
+                    print(playpal[i:i+3].hex())
             elif arg[0:7] == "--save-":
-                with open(filename, 'rb') as file:
-                    file.seek(index*768)
-                    bytemap = file.read(768)
-                    file.seek(index*768)
-                    colors = []
-                    for i in range(256):
-                        colors.append(file.read(3))
                 name = os.path.splitext(filename)[0] + str(index)
                 if arg == "--save-hexmap":
-                    print("paller: saving hex values", index, "to", name + ".txt")
-                    save_hexmap(colors, name + ".txt")
+                    print("paller: saving hex values to", name + ".txt")
+                    save_hexmap(playpal, name + ".txt")
                 if arg == "--save-lump":
-                    print("paller: saving lump data", index, "to", name + ".lmp")
-                    save_lump(bytemap, name + ".lmp")
+                    print("paller: saving lump data to", name + ".lmp")
+                    save_lump(playpal, name + ".lmp")
                 if arg == "--save-pixmap" in sys.argv:
-                    print("paller: saving colors", index, "to", name + ".ppm")
-                    save_pixmap(colors, name + ".ppm")
+                    print("paller: saving colors to", name + ".ppm")
+                    save_pixmap(playpal, name + ".ppm")
     else:
         print("paller: not a file '" + filename + "'")
 
@@ -65,6 +60,12 @@ def check_file(filename):
     else:
         print("paller: filesize", filesize)
         print("paller: this is likely not a palette lump")
+
+def load_playpal(filename, index):
+    with open(filename, 'rb') as file:
+        file.seek(768 * index)
+        playpal = file.read(768)
+    return playpal
 
 def read_hexmap(filename):
     """Return 256 hex-encoded values read from a file."""
@@ -87,20 +88,22 @@ def save_lump(bytemap, name):
     with open(name, 'wb') as file:
         file.write(bytemap)
 
-def save_pixmap(pixels, name):
+def save_pixmap(playpal, name):
     """Save remapped bytes to a Portable PixMap file."""
     with open(name, 'wb') as file:
         file.write(b"P6 ")
         file.write(b"16 16 ")
         file.write(b"255 ")
-        for pixel in pixels:
-            file.write(pixel)
+        for i in range(0, 768, 3):
+            color = playpal[i:i+3]
+            file.write(color)
 
-def save_hexmap(colormap, name):
+def save_hexmap(playpal, name):
     """Save each color value in hexadecimal."""
     with open(name, 'w') as file:
-        for color in colormap:
-            file.write(color.hex() + "\n")
+        for i in range(0, 768, 3):
+            name = playpal[i:i+3].hex()
+            file.write(name + "\n")
 
 if __name__ == "__main__":
     try: main()

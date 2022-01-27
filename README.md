@@ -53,12 +53,12 @@ a text file, or render them as 256-color pixmaps.
 
 - <code>python3 patter.py "filename"</code>
 - <code>python3 patter.py --save-pixmap "filename"</code>
-- <code>python3 patter.py --colormap=PLAYPAL0.lmp --save-pixmap "filename"</code>
+- <code>python3 patter.py --playpal=PLAYPAL0.lmp --save-pixmap "filename"</code>
 
 This script works with lump files formatted in DOOM "picture format". It 
 can render the binary data as a 256-color pixmap with a transparency 
-mask. If you do not supply it with a PLAYPAL colormap data lump it will 
-render the image with 256 gray shades instead of the intended colors.
+mask. If you do not supply it with a PLAYPAL data lump it will render 
+the image with 256 gray shades instead of the intended colors.
 
 ## Details
 

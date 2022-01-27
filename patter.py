@@ -23,14 +23,14 @@ def main():
     filename = sys.argv[-1]
     if os.path.isfile(filename):
         header, columns = load_patch(filename)
-        colormap = graymap()
+        playpal = graymap()
         for arg in sys.argv:
-            if arg[0:11] == "--colormap=":
+            if arg[0:11] == "--playpal=":
                 path = arg[11:]
-                colormap = load_colormap(path)
+                playpal = load_playpal(path)
             elif arg == "--save-pixmap":
                 bytemap, bitmask = get_bytemap(header, columns)
-                pixmap = get_pixmap(bytemap, bitmask, colormap)
+                pixmap = get_pixmap(bytemap, bitmask, playpal)
                 name = os.path.splitext(filename)[0] + ".ppm"
                 save_pixmap(pixmap, header['width'], header['height'], name)
 
@@ -64,7 +64,7 @@ def graymap():
         map.extend((i, i, i))
     return map
 
-def load_colormap(filename):
+def load_playpal(filename):
     """Load a 24bpp color translation map."""
     with open(filename, 'rb') as file:
         return file.read(768)
