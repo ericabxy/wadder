@@ -25,14 +25,36 @@ def main():
         header, columns = load_patch(filename)
         playpal = graymap()
         for arg in sys.argv:
-            if arg[0:11] == "--playpal=":
-                path = arg[11:]
+            if arg[0:11] == "--colormap=":
+                name = arg[11:]
+                with open(name, 'rb') as file:
+                    colormap = file.read(256)
+            elif arg in ("--green", "--indigo", "--brown", "--red",
+                  "--yellow", "--white", ):
+                colormap = get_colormap(arg[2:])
+            elif arg[0:10] == "--playpal=":
+                path = arg[10:]
                 playpal = load_playpal(path)
             elif arg == "--save-pixmap":
                 bytemap, bitmask = get_bytemap(header, columns)
+                if "--translate" in sys.argv:
+                    bytemap = translate(bytemap, colormap)
                 pixmap = get_pixmap(bytemap, bitmask, playpal)
                 name = os.path.splitext(filename)[0] + ".ppm"
                 save_pixmap(pixmap, header['width'], header['height'], name)
+
+def get_colormap(name):
+    colormap = [x for x in range(256)]
+    if name == "green":
+        colormap[176:191] = [x - 64 for x in colormap[176:191]]
+    elif name == "indigo":
+        colormap[112:127] = [x - 16 for x in colormap[112:127]]
+    elif name == "brown":
+        colormap[112:127] = [x - 48 for x in colormap[112:127]]
+    elif name == "red":
+        colormap[112:127] = [x - 80 for x in colormap[112:127]]
+    elif name == "yellow":
+        colormap[176:183] = [x + 48 for x in colormap[176:183]]
 
 def get_bytemap(header, columns):
     """Render the patch from data and include a transparency mask."""
@@ -63,6 +85,11 @@ def graymap():
     for i in range(256):
         map.extend((i, i, i))
     return map
+
+def translate(bytemap, colormap):
+    for i, value in enumerate(bytemap):
+        bytemap[i] = colormap[value]
+    return bytemap
 
 def load_playpal(filename):
     """Load a 24bpp color translation map."""

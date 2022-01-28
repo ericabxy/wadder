@@ -1,4 +1,5 @@
 *.pgm
+*.png
 *.ppm
 *.pyc
 *.swp

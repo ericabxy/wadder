@@ -67,14 +67,6 @@ def load_playpal(filename, index):
         playpal = file.read(768)
     return playpal
 
-def read_hexmap(filename):
-    """Return 256 hex-encoded values read from a file."""
-    map = []
-    with open(filename) as file:
-        for i in range(256):
-            map.append(file.readline())
-    return map
-
 def save_graymap(bytemap, name):
     """Save bytes to a 4096-pixel Portable GrayMap."""
     with open(name, 'wb') as file:
