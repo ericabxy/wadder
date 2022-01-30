@@ -39,7 +39,7 @@ def main():
     datakeys = ["filepos", "size", "name"]
     # print any header information requested
     for key in header.keys():
-        if "--header-" + key in args:
+        if "--header-" + key in sys.argv:
             print(header[key])
     # process all command flags in order
     # TODO: what if "directory" does not exist?
@@ -63,7 +63,7 @@ def main():
             match = arg[7:]
             for i, entry in enumerate(directory):
                 if entry['name'][:len(match)] == match:
-                    if "--indexed" in args:
+                    if "--indexed" in sys.argv:
                         print(i, end=": ")
                     for data in get_data(entry, datakeys):
                         print(data, end=" ")
@@ -132,12 +132,20 @@ def get_directory(filename, offset, numlumps):
 def get_header(filename):
     """Return each part of the file header in a dictionary."""
     with open(filename, 'rb') as file:
-        header = file.read(12)
-    ident = header[0:4].decode()
-    nlumps = int.from_bytes(header[4:8], byteorder='little')
-    offs = int.from_bytes(header[8:12], byteorder='little')
-    return dict(header=header,identification=ident,
-                numlumps=nlumps,infotableofs=offs)
+        bytemap = file.read(12)
+    header = {'bytes': bytemap}
+    if bytemap[0:4].decode() == "IWAD":
+        header['type'] = "Internal WAD"
+    elif bytemap[0:4].decode() == "PWAD":
+        header['type'] = "Patch WAD"
+    elif bytemap[1:4].decode() == "WAD":
+        header['type'] = "nonstandard"
+    else:
+        header['type'] = "not a WAD"
+    header['identification'] = bytemap[0:4].decode()
+    header['numlumps'] = int.from_bytes(bytemap[4:8], 'little')
+    header['infotableofs'] = int.from_bytes(bytemap[8:12], 'little')
+    return header
 
 def get_lump(filename, entry):
     """Return lump data as binary data."""

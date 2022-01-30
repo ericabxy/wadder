@@ -1,34 +1,44 @@
 import os
 import sys
 
-from wadder import Levels
+from xwadder import Levels
 
 from PIL import Image, ImageDraw
 
 def main():
     filename = sys.argv[-1]
     if os.path.isfile(filename):
-        pairs = Levels.load_vertices(filename)
-        ox, oy, width, height = 1024, 1024, 2048, 2048
+        pairs, left, top, right, bottom = Levels.load_vertices(filename)
+        width, height = right - left, bottom - top
         for arg in sys.argv:
-            if arg[0:13] == "--draw-lines=":
+            if arg[0:13] == "--load-lines=":
                 name = arg[13:]
-                image = draw_lines(name, pairs, ox, oy, width, height)
-            elif arg[0:9] == "--height=":
-                height = int(arg[9:])
+                print(os.path.getsize(name))
+                linemap = get_lines(name, pairs)
             elif arg == "--save":
                 name = os.path.splitext(filename)[0]
-                image.save(name + str(ox) + "." + str(oy) + ".png", 'PNG')
-            elif arg[0:11] == "--origin-x=":
-                ox = int(arg[11:])
-            elif arg[0:11] == "--origin-y=":
-                oy = int(arg[11:])
+                image.save(name + ".png", 'PNG')
+            elif arg[0:11] == "--save-lua=":
+                print(arg)
+                name = arg[11:]
+                with open(name + ".lua", 'w') as file:
+                    file.write("Lines{\n")
+                    for linetup in linemap:
+                        file.write("  {")
+                        for x in linetup:
+                            file.write(str(x) + ", ")
+                        file.write("},\n")
+                    file.write("}\n")
+            elif arg[0:11] == "--save-png=":
+                name = arg[11:]
+                image = draw_linemap(
+                        linemap, left, top, width, height)
+                image.save(name + ".png", 'PNG')
             elif arg[0:8] == "--width=":
                 width = int(arg[8:])
 
-def draw_lines(filename, vertices, ox=0, oy=0, width=1024, height=1024):
-    image = Image.new('RGB', (width, height), (0, 0, 0))
-    draw = ImageDraw.Draw(image)
+def get_lines(filename, vertices, andmask1=0x00):
+    linemap = []
     file = open(filename, 'rb')
     while not file.closed:
         sv = file.read(2)
@@ -41,17 +51,19 @@ def draw_lines(filename, vertices, ox=0, oy=0, width=1024, height=1024):
         if sv == b'' or ev == b'':
             file.close()
         else:
-            one_sided = flags[0] & 0x04
-            secret_line = flags[0] & 0x20
-            start = vertices[int.from_bytes(sv, byteorder='little')]
-            ender = vertices[int.from_bytes(ev, byteorder='little')]
-            color = (255, 0, 0)
-            color = (176, 176, 176) if one_sided else color
-            color = (255, 0, 255) if secret_line else color
-            blue = blue if flags[0] & 0x20 else 176
-            cline = (start[0] + ox, -start[1] + oy,
-                     ender[0] + ox, -ender[1] + oy)
-            draw.line(cline, fill=color)
+            vexa = vertices[int.from_bytes(sv, byteorder='little')]
+            vexb = vertices[int.from_bytes(ev, byteorder='little')]
+            cline = (vexa[0], vexa[1], vexb[0], vexb[1])
+            if not flags[0] & andmask1:
+                linemap.append(cline)
+    return linemap
+
+def draw_linemap(linemap, ox=0, oy=0, width=1024, height=1024):
+    image = Image.new('RGB', (width, height), (0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    for line in linemap:
+        x1, y1, x2, y2 = line[0] - ox, line[1] - oy, line[2] - ox, line[3] - oy
+        draw.line((x1, y1, x2, y2), fill=(176, 176, 176))
     return image
 
 if __name__ == "__main__":

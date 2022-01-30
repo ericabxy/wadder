@@ -1,8 +1,12 @@
+*.dat
+*.lmp
+*.lua
 *.pbm
 *.pgm
 *.png
 *.ppm
 *.pyc
 *.swp
-*.lmp
 *.wad
+
+__pycache__/*

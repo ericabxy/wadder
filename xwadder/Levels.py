@@ -23,19 +23,18 @@ def main():
     filename = sys.argv[-1]
     if os.path.isfile(filename):
         res = 64
-        width, height, origin, intmap = scale(res)
+        width, height, origin = scale(res)
         file = open(filename, 'rb')
         for arg in sys.argv:
             if arg[0:13] == "--resolution=":
                 res = int(arg[13:])
-                width, height, origin, intmap = scale(res)
+                width, height, origin = scale(res)
         bits, intmap = load_maps(filename, res)
         save_bitmap(bits, width, height, "vertexes")
         save_graymap(intmap, width, height, "vertexes")
 
-def load_maps(filename, res):
-    width, height = int(65536 / res), int(65536 / res)
-    origin = int(65536 / res / 2)
+def load_maps(filename, left, top, right, bottom):
+    width, height = right - left + 1, bottom - top + 1
     bitstring = "1" * width * height
     intmap = [0 for x in range(width * height)]
     file = open(filename, 'rb')
@@ -48,8 +47,8 @@ def load_maps(filename, res):
         if bx == b'' or by == b'':
             file.close()
         else:
-            px, py = int(x / res) + origin, int(y / res) + origin
-            pos = (width * height - width) + px - (width * py)
+            px, py = x - left, y - top
+            pos = px + (width * py)
             bitstring = bitstring[0:pos] + "0" + bitstring[pos+1:]
             intmap[pos] = i % 256
         i = i + 1
@@ -57,6 +56,7 @@ def load_maps(filename, res):
 
 def load_vertices(filename):
     pairs = []
+    left, top, right, bottom = 0, 0, 0, 0
     file = open(filename, 'rb')
     while not file.closed:
         bx = file.read(2)
@@ -67,13 +67,16 @@ def load_vertices(filename):
             file.close()
         else:
             pairs.append((x, y))
-    return pairs
+        if x < left: left = x
+        if x > right: right = x
+        if y < top: top = y
+        if y > bottom: bottom = y
+    return pairs, left, top, right, bottom
 
 def scale(div):
     width, height = int(65536 / div), int(65536 / div)
     origin = int(65536 / div / 2)
-    bitmap = [0 for x in range(width * height)]
-    return width, height, origin, bitmap
+    return width, height, origin
 
 def save_bitmap(bitmap, width, height, name):
     with open(name + ".pbm", 'wb') as file:
