@@ -54,24 +54,36 @@ def load_maps(filename, left, top, right, bottom):
         i = i + 1
     return bitstring, intmap
 
-def load_vertices(filename):
+def read_things(bytemap):
     pairs = []
     left, top, right, bottom = 0, 0, 0, 0
-    file = open(filename, 'rb')
-    while not file.closed:
-        bx = file.read(2)
-        by = file.read(2)
-        x = int.from_bytes(bx, byteorder='little', signed=True)
-        y = int.from_bytes(by, byteorder='little', signed=True)
-        if bx == b'' or by == b'':
-            file.close()
-        else:
-            pairs.append((x, y))
+    for i in range(0, len(bytemap), 2):
+        x = int.from_bytes(bytemap[i: i + 2], byteorder='little', signed=True)
+        y = int.from_bytes(bytemap[i + 2: i + 4], byteorder='little', signed=True)
+        angle = bytemap[i + 4: i + 6]
+        type = bytemap[i + 6: i + 8]
+        flags = bytemap[i + 8: i + 10]
+        pairs.append((x, y))
         if x < left: left = x
         if x > right: right = x
         if y < top: top = y
         if y > bottom: bottom = y
-    return pairs, left, top, right, bottom
+    return pairs
+
+def read_vertices(bytemap):
+    pairs = []
+    left, top, right, bottom = 0, 0, 0, 0
+    for i in range(0, len(bytemap), 4):
+        bx = bytemap[i:i+2]
+        by = bytemap[i+2:i+4]
+        x = int.from_bytes(bx, byteorder='little', signed=True)
+        y = int.from_bytes(by, byteorder='little', signed=True)
+        pairs.append((x, y))
+        if x < left: left = x
+        if x > right: right = x
+        if y < top: top = y
+        if y > bottom: bottom = y
+    return pairs, (left, top, right, bottom)
 
 def scale(div):
     width, height = int(65536 / div), int(65536 / div)

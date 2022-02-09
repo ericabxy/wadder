@@ -23,27 +23,16 @@ def main():
     # user-friendly checks and output
     args = sys.argv
     if len(args) < 2:
-        usage()
-        sys.exit()
-    elif "--help" in args:
-        help()
         sys.exit()
     elif os.path.isfile(args[-1]):
         filename = args[-1]
+        wad = Wad(filename)
     else:
         sys.exit()
-    header = get_header(filename)
-    directory = get_directory(filename,
-                              header['infotableofs'],
-                              header['numlumps'])
     datakeys = ["filepos", "size", "name"]
-    # print any header information requested
-    for key in header.keys():
-        if "--header-" + key in sys.argv:
-            print(header[key])
     # process all command flags in order
-    # TODO: what if "directory" does not exist?
-    index, endex = 0, len(directory)-1
+    index, endex = 0, len(wad.directory)-1
+    start = 0
     for arg in sys.argv:
         if arg[0:7] == "--data=":
             key = arg[7:]
@@ -60,21 +49,15 @@ def main():
                 print(value, end=" ")
             print()
         elif arg[0:7] == "--find=":
-            match = arg[7:]
-            for i, entry in enumerate(directory):
-                if entry['name'][:len(match)] == match:
-                    if "--indexed" in sys.argv:
-                        print(i, end=": ")
-                    for data in get_data(entry, datakeys):
-                        print(data, end=" ")
-                    print()
-                    if "--save" in args:
-                        lump = get_lump(filename, entry)
-                        save_lump(lump, entry['name'])
+            name = arg[7:]
+            for entry in wad.find_lumps(name):
+                for value in entry.values():
+                    print(value, end=" ")
+                print()
         elif arg[0:8] == "--index=":
             index = int(arg[8:])
         elif arg == "--length":
-            print(len(directory))
+            print(len(wad.directory))
         elif arg == "--list":
             for i in range(index, endex+1):
                 entry = directory[i]
@@ -84,24 +67,18 @@ def main():
                     print(data, end=" ")
                 print()
                 if "--save" in args:
-                    lump = get_lump(filename, entry)
+                    lump = wad.get_lump(i)
                     save_lump(lump, entry['name'])
         elif arg[0:7] == "--save=":
             index = int(arg[7:])
-            entry = directory[index]
-            lump = get_lump(filename, entry)
+            entry = wad.directory[index]
+            lump = wad.get_lumpnum(index)
             save_lump(lump, entry['name'])
+        elif arg[0:8] == "--start=":
+            start = int(arg[8:])
     # cordially parse results if no commands are given
     if len(sys.argv) < 3:
-        if header['header'][0:4] == b"IWAD":
-            print("wadder: 'Internal WAD' signature identified")
-        elif header['header'][0:4] == b"PWAD":
-            print("wadder: 'Patch WAD' signature identified")
-        elif header['header'][1:4] == b"WAD":
-            print("wadder: non-standard WAD signature")
-        else:
-            print("wadder: file does not have a WAD signature")
-        print_header(header)
+        print(wad.report())
 
 def get_data(entry, keys):
     """Return a list of data from one entry."""
@@ -122,6 +99,7 @@ def get_directory(filename, offset, numlumps):
                 size = int.from_bytes(file.read(4), byteorder='little')
                 name = file.read(8).decode('ascii')
                 entry = dict(
+                        intex=i,
                         index=str(i)+":",
                         filepos=filepos,
                         size=size,
@@ -147,21 +125,6 @@ def get_header(filename):
     header['infotableofs'] = int.from_bytes(bytemap[8:12], 'little')
     return header
 
-def get_lump(filename, entry):
-    """Return lump data as binary data."""
-    name = entry['name'].rstrip("\0") + ".lmp"
-    with open(filename, 'rb') as file:
-        file.seek(entry['filepos'])
-        lump = file.read(entry['size'])
-    return lump
-
-def print_header(header):
-    """Print header information in a human-readable way."""
-    print("raw header:", header['header'])
-    print("signature:", header['identification'])
-    print("total number of lumps:", header['numlumps'])
-    print("location of directory:", header['infotableofs'])
-
 def save_lump(data, name, ext=".lmp"):
     filename = name.rstrip("\0") + ext
     print("wadder: saving lump data to binary file", filename)
@@ -169,24 +132,59 @@ def save_lump(data, name, ext=".lmp"):
         file.write(data)
 
 class Wad:
+    """Represent a WAD binary data file.
+
+    This object is data-agnostic. It knows how to interpret the file's
+    header and directory, read lump names, extract lump data, etc. but
+    cannot interpret lump data.
+    """
     def __init__(self, filename):
         self.byteorder = 'little'
         with open(filename, 'rb') as file:
-            if file.peek(4)[1:4] == b"WAD":
-                print("WARNING: WAD signature not recognized")
-                print("raw signature", file.peek(4)[1:4])
+            self.header = file.read(12)
+            file.seek(0)
             self.read_header(file)
             self.read_directory(file)
+        self.filename = filename
+
+    def find_lumps(self, name, more=1):
+        """Search and return entries matching 'name'.
+
+        'more' appends a range of entries after the first one found
+        """
+        lumps = []
+        for i, entry in enumerate(self.directory):
+            if entry['name'][:len(name)] == name:
+                for j in range(more):
+                    lumps.append(self.directory[i + j])
+        return lumps
+
+    def get_lump(self, entry):
+        """Return lump data as binary data."""
+        name = entry['name'].rstrip("\0") + ".lmp"
+        with open(self.filename, 'rb') as file:
+            file.seek(entry['filepos'])
+            lump = file.read(entry['size'])
+        return lump
+
+    def get_lumpnum(self, index):
+        """Return lump data as binary data."""
+        entry = self.directory[index]
+        name = entry['name'].rstrip("\0") + ".lmp"
+        with open(self.filename, 'rb') as file:
+            file.seek(entry['filepos'])
+            lump = file.read(entry['size'])
+        return lump
 
     def read_directory(self, file):
         directory = []
         file.seek(self.infotableofs)
-        for i in range(numlumps):
+        for i in range(self.numlumps):
             filepos = self.readint(file.read(4))
             size = self.readint(file.read(4))
             name = file.read(8).decode('ascii')
             entry = dict(
-                    index=str(i)+":",
+                    index=i,
                     filepos=filepos,
                     size=size,
                     name=name)
@@ -194,9 +192,8 @@ class Wad:
         self.directory = tuple(directory)
 
     def read_header(self, file):
-        self.header = file.peek(12)
-        self.ident = self.readstr(file.read(4))
-        self.nlumps = self.readint(file.read(4))
+        self.identification = self.readstr(file.read(4))
+        self.numlumps = self.readint(file.read(4))
         self.infotableofs = self.readint(file.read(4))
 
     def readint(self, data):
@@ -204,6 +201,20 @@ class Wad:
 
     def readstr(self, data):
         return data.decode()
+
+    def report(self):
+        if self.header[0:4] == b"IWAD":
+            print("wadder: 'Internal WAD' signature identified")
+        elif self.header[0:4] == b"PWAD":
+            print("wadder: 'Patch WAD' signature identified")
+        elif self.header[1:4] == b"WAD":
+            print("wadder: non-standard WAD signature")
+        else:
+            print("wadder: file does not have a WAD signature")
+        print("raw header:", self.header)
+        print("signature:", self.identification)
+        print("total number of lumps:", self.numlumps)
+        print("location of directory:", self.infotableofs)
 
 
 if __name__ == "__main__":
