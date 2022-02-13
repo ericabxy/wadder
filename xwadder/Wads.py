@@ -19,67 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import sys
 
-def main():
-    # user-friendly checks and output
-    args = sys.argv
-    if len(args) < 2:
-        sys.exit()
-    elif os.path.isfile(args[-1]):
-        filename = args[-1]
-        wad = Wad(filename)
-    else:
-        sys.exit()
-    datakeys = ["filepos", "size", "name"]
-    # process all command flags in order
-    index, endex = 0, len(wad.directory)-1
-    start = 0
-    for arg in sys.argv:
-        if arg[0:7] == "--data=":
-            key = arg[7:]
-            if key not in datakeys:
-                datakeys.append(key)
-        elif arg[0:12] == "--data-only=":
-            datakeys = [arg[12:]]
-        elif arg[0:6] == "--end=":
-            endex = int(arg[6:])
-        elif arg[0:8] == "--entry=":
-            index = int(arg[8:])
-            entry = directory[index]
-            for value in entry.values():
-                print(value, end=" ")
-            print()
-        elif arg[0:7] == "--find=":
-            name = arg[7:]
-            for entry in wad.find_lumps(name):
-                for value in entry.values():
-                    print(value, end=" ")
-                print()
-        elif arg[0:8] == "--index=":
-            index = int(arg[8:])
-        elif arg == "--length":
-            print(len(wad.directory))
-        elif arg == "--list":
-            for i in range(index, endex+1):
-                entry = directory[i]
-                if "--indexed" in args:
-                    print(i, end=": ")
-                for data in get_data(entry, datakeys):
-                    print(data, end=" ")
-                print()
-                if "--save" in args:
-                    lump = wad.get_lump(i)
-                    save_lump(lump, entry['name'])
-        elif arg[0:7] == "--save=":
-            index = int(arg[7:])
-            entry = wad.directory[index]
-            lump = wad.get_lumpnum(index)
-            save_lump(lump, entry['name'])
-        elif arg[0:8] == "--start=":
-            start = int(arg[8:])
-    # cordially parse results if no commands are given
-    if len(sys.argv) < 3:
-        print(wad.report())
-
 def get_data(entry, keys):
     """Return a list of data from one entry."""
     datalist = []
@@ -138,13 +77,14 @@ class Wad:
     header and directory, read lump names, extract lump data, etc. but
     cannot interpret lump data.
     """
+
     def __init__(self, filename):
         self.byteorder = 'little'
         with open(filename, 'rb') as file:
             self.header = file.read(12)
             file.seek(0)
-            self.read_header(file)
-            self.read_directory(file)
+            if self.read_header(file):
+                self.read_directory(file)
         self.filename = filename
 
     def find_lumps(self, name, more=1):
@@ -195,6 +135,7 @@ class Wad:
         self.identification = self.readstr(file.read(4))
         self.numlumps = self.readint(file.read(4))
         self.infotableofs = self.readint(file.read(4))
+        return self.identification[1:] == "WAD"
 
     def readint(self, data):
         return int.from_bytes(data, byteorder=self.byteorder)
@@ -215,9 +156,3 @@ class Wad:
         print("signature:", self.identification)
         print("total number of lumps:", self.numlumps)
         print("location of directory:", self.infotableofs)
-
-
-if __name__ == "__main__":
-    try: main()
-    except KeyboardInterrupt: print("Keyboard Interrupt (Control-C)...")
-    sys.exit()
