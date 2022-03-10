@@ -24,12 +24,12 @@ are accessed via additional command-line parameters.
 
 - examples:
   + <code>python3 wadder.py --list Valiant.wad</code>
-  + <code>python3 wadder.py --index=100 --end=120 --list freedm.wad</code>
-  + <code>python3 wadder.py --indexed --find=VILE freedoom2.wad</code>
+  + <code>python3 wadder.py --start=100 --end=120 --list freedm.wad</code>
+  + <code>python3 wadder.py --index --find=VILE freedoom2.wad</code>
   + <code>python3 wadder.py --find=PLAYPAL --save aaliens.wad</code>
 
 The script can list the metadata for every entry in the WAD directory, 
-or limit the list to a range indicated by "--index=" and "--end=". It 
+or limit the list to a range indicated by "--start=" and "--end=". It 
 can also find entries by name with "--find=" and it will save the lump 
 data for every entry listed/found as a ".lmp" file if you pass the 
 "--save" flag. For more information and features, access the help text 

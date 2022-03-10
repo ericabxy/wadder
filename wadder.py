@@ -1,25 +1,107 @@
 #!/usr/bin/env python3
+#Wadder - a script for working with WAD and related file formats
+#Copyright 2022 Eric Duhamel
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-Wadder - a script for working with WAD and related file formats
-Copyright 2022 Eric Duhamel
+    usage: python3 wadder.py <parameters> <filename>
+    examples:
+      python3 wadder.py freedoom2.wad
+        parse and print the WAD header information for freedoom2.wad
+      python3 wadder.py --start=10 --end=20 --list freedm.wad
+        print the metadata for each entry from 10 to 20 for freedm.wad
+      python3 wadder.py --find=FLOOR --save Valiant.wad
+        find and save every lump in Valiant.wad named FLOOR*
+      python3 wadder.py --save=100 DOOM2.WAD
+        save the 100th lump found in DOOM2.WAD
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    --data=filepos
+    --data=size
+    --data=name
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+        Add the specified key to the list of metadata to print for each
+        entry. By default for each entry Wadder will print all three
+        metadata, so normally this is not needed. However it can be used
+        to re-add to the list of metadata if it was removed with
+        '--data-only='.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    --data-only=filepos
+    --data-only=size
+    --data-only=name
+
+        Clear the list of metadata to print for each entry, and replace
+        it with only the key specified. If more metadata is needed, use
+        '--data=' to add more to the list.
+
+    --end=N
+
+        Set the last entry to index (inclusive) when using '--list'.
+        Defaults to the last entry in the directory.
+
+    --entry=N
+
+        Print all metadata for a single entry in the directory at index
+        N.
+
+    --find=string
+
+        Find and print the entry for any lumps which have a name
+        starting with 'string'. Also save each matching lump if the
+        '--save' flag is set.
+
+    --header-identification
+    --header-numlumps
+    --header-infotableofs
+
+        Print the requested header information.
+
+    --start=N
+
+        Set the first entry to index when using '--list'. Defaults to
+        the first entry [0].
+
+    --index
+
+        Prepend each entry listed by printing its index before the
+        metadata.
+
+    --length
+
+        Print the length of the directory.
+
+    --list
+
+        Print each entry in the directory starting with '--start=' and
+        ending with '--end='. Each entry is printed on a new line with
+        a blank separator between each metadata. If the '--save' flag
+        is set, save each entry listed as a raw lump file.
+
+    --save
+
+        Save the lump data from each entry listed as a binary file with
+        the '.lmp' extension.
+
+    --save=N
+
+        Save the lump data from the entry at index N as a binary file
+        with the '.lmp' extension.
 """
 import os
 import sys
 
 def main():
+    """Provide a command-line interface to Wadder functions."""
     # user-friendly checks and output
     args = sys.argv
     if len(args) < 2:
@@ -63,7 +145,7 @@ def main():
             match = arg[7:]
             for i, entry in enumerate(directory):
                 if entry['name'][:len(match)] == match:
-                    if "--indices" in args:
+                    if "--index" in args:
                         print(i, end=": ")
                     for data in get_data(entry, datakeys):
                         print(data, end=" ")
@@ -71,14 +153,14 @@ def main():
                     if "--save" in args:
                         lump = get_lump(filename, entry)
                         save_lump(lump, entry['name'])
-        elif arg[0:8] == "--index=":
+        elif arg[0:8] == "--start=":
             index = int(arg[8:])
         elif arg == "--length":
             print(len(directory))
         elif arg == "--list":
             for i in range(index, endex+1):
                 entry = directory[i]
-                if "--indices" in args:
+                if "--index" in args:
                     print(i, end=": ")
                 for data in get_data(entry, datakeys):
                     print(data, end=" ")
@@ -91,7 +173,7 @@ def main():
             nstop = start + int(arg[7:])
             for i in range(start, nstop+1):
                 entry = directory[i]
-                if "--indices" in args:
+                if "--index" in args:
                     print(i, end=": ")
                 for data in get_data(entry, datakeys):
                     print(data, end=" ")
@@ -172,78 +254,6 @@ def save_lump(data, name, ext=".lmp"):
     print("wadder: saving lump data to binary file", filename)
     with open(filename, 'w+b') as file:
         file.write(data)
-
-def help():
-    print("\t--data=filepos")
-    print("\t--data=size")
-    print("\t--data=name")
-    print("")
-    print("\t\tAdd the specified key to the list of metadata to print for each")
-    print("\t\tentry. By default for each entry Wadder will print all three")
-    print("\t\tmetadata, so normally this is not needed. However it can be used")
-    print("\t\tto re-add to the list of metadata if it was removed with")
-    print("\t\t'--data-only='.")
-    print("")
-    print("\t--data-only=filepos")
-    print("\t--data-only=size")
-    print("\t--data-only=name")
-    print("")
-    print("\t\tClear the list of metadata to print for each entry, and replace")
-    print("\t\tit with only the key specified. If more metadata is needed, use")
-    print("\t\t'--data=' to add more to the list.")
-    print("")
-    print("\t--end=N")
-    print("")
-    print("\t\tSet the last entry to index (inclusive) when using '--list'.")
-    print("\t\tDefaults to the last entry in the directory.")
-    print("")
-    print("\t--entry=N")
-    print("")
-    print("\t\tPrint all metadata for a single entry in the directory at index")
-    print("\t\tN.")
-    print("")
-    print("\t--find=string")
-    print("")
-    print("\t\tFind and print the entry for any lumps which have a name")
-    print("\t\tstarting with 'string'. Also save each matching lump if the")
-    print("\t\t'--save' flag is set.")
-    print("")
-    print("\t--header-identification")
-    print("\t--header-numlumps")
-    print("\t--header-infotableofs")
-    print("")
-    print("\t\tPrint the requested header information.")
-    print("")
-    print("\t--index=N")
-    print("")
-    print("\t\tSet the first entry to index when using '--list'. Defaults to")
-    print("\t\tthe first entry [0].")
-    print("")
-    print("\t--indexed")
-    print("")
-    print("\t\tPrepend each entry listed by printing its index before the")
-    print("\t\tmetadata.")
-    print("")
-    print("\t--length")
-    print("")
-    print("\t\tPrint the length of the directory.")
-    print("")
-    print("\t--list")
-    print("")
-    print("\t\tPrint each entry in the directory starting with '--index=' and")
-    print("\t\tending with '--end='. Each entry is printed on a new line with")
-    print("\t\ta blank separator between each metadata. If the '--save' flag")
-    print("\t\tis set, save each entry listed as a raw lump file.")
-    print("")
-    print("\t--save")
-    print("")
-    print("\t\tSave the lump data from each entry listed as a binary file with")
-    print("\t\tthe '.lmp' extension.")
-    print("")
-    print("\t--save=N")
-    print("")
-    print("\t\tSave the lump data from the entry at index N as a binary file")
-    print("\t\twith the '.lmp' extension.")
 
 def usage():
     print("invoked:", sys.argv[0])
