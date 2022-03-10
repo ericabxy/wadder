@@ -1,20 +1,45 @@
 #!/usr/bin/env python3
+#Copyright 2022 Eric Duhamel
+#
+#    This file is part of Wadder.
+#
+#    Wadder is free software: you can redistribute it and/or modify it
+#    under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    Wadder is distributed in the hope that it will be useful, but
+#    WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#    General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Wadder. If not, see <https://www.gnu.org/licenses/>.
+#
 """
-Levels - a module for working with Boom map lumps
-Copyright 2022 Eric Duhamel
+a module for working with *OOM map lumps
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+WORK-IN-PROGRESS
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+Extract an individual map (consisting of several lumps) into a
+directory or a WAD file.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
+The original DOOM map format consists of one empty (0 byte) "header"
+lump followed by exactly ten lumps named THINGS, LINEDEFS, SIDEDEFS,
+VERTEXES, SEGS, SSECTORS, NODES, SECTORS, REJECT, and BLOCKMAP. To
+extract, simply find the header named with the ExMy or MAPxy convention
+and load it plus the following ten lumps into a dictionary; or save
+it plus the following ten lumps into a directory named after the
+header.
+
+Other map formats can have more or less lumps. Some formats use a
+"footer" to indicate the end of the set of map lumps. Some formats may
+use a text file to dilineate the beginning and end of each set of map
+lumps.
+
+This module can extract and reinsert maps when working from a valid
+WAD as a source, but will require third-party tools (such as a
+node-builder) to generate maps from scratch.
 """
 import os
 import sys
