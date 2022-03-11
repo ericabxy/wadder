@@ -1,9 +1,43 @@
+#!/usr/bin/env python3
+#Copyright 2022 Eric Duhamel
+#
+#    This file is part of Wadder.
+#
+#    Wadder is free software: you can redistribute it and/or modify it
+#    under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    Wadder is distributed in the hope that it will be useful, but
+#    WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#    General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Wadder. If not, see <https://www.gnu.org/licenses/>.
+#
 """
 Functions for loading data from lumps in formats originally designed
 for Doom and Doom II.
 """
 
-def read_linedefs(bytemap):
+def read_things(bytemap):
+    """Return all x,y coordiante pairs from a 'THINGS' lump.
+
+    'THINGS' is the fourth lump after the map 'Header' lump in a
+    WAD."""
+    things = []
+    for i in range(0, len(bytemap), 2):
+        thing = {}
+        thing['x'] = read_int16_t(bytemap[i:])
+        thing['y'] = read_int16_t(bytemap[i + 2:])
+        thing['angle'] = read_int16_t(bytemap[i + 4:])
+        thing['type'] = read_int16_t(bytemap[i + 6:])
+        thing['flags'] = read_int16_t(bytemap[i + 8:])
+        things.append(thing)
+    return things
+
+def load_linedefs(bytemap):
     linedefs = []
     for i in range(0, len(bytemap), 14):
         linedef = {}
@@ -30,19 +64,11 @@ def read_sidedefs(bytemap):
         sidedefs.append(sidedef)
     return sidedefs
 
-def read_things(bytemap):
-    things = []
-    for i in range(0, len(bytemap), 2):
-        thing = {}
-        thing['x'] = read_int16_t(bytemap[i:])
-        thing['y'] = read_int16_t(bytemap[i + 2:])
-        thing['angle'] = read_int16_t(bytemap[i + 4:])
-        thing['type'] = read_int16_t(bytemap[i + 6:])
-        thing['flags'] = read_int16_t(bytemap[i + 8:])
-        things.append(thing)
-    return things
+def load_vertexes(bytemap):
+    """Return all x,y coordiante pairs from a 'VERTEXES' lump.
 
-def read_vertexes(bytemap):
+    'VERTEXES' is the fourth lump after the map 'Header' lump in a
+    WAD."""
     vertexes = []
     for i in range(0, len(bytemap), 4):
         vertex = {}
@@ -62,3 +88,6 @@ def readstr(data):
 
 def readuint(data):
     return int.from_bytes(data, byteorder='little', signed=False)
+
+if __name__ == "__main__":
+    print(__doc__)

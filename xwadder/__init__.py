@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+#Copyright 2022 Eric Duhamel
+#
+#    This file is part of Wadder.
+#
+#    Wadder is free software: you can redistribute it and/or modify it
+#    under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    Wadder is distributed in the hope that it will be useful, but
+#    WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#    General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with Wadder. If not, see <https://www.gnu.org/licenses/>.
+#
 """
 Wadder - modules for handling the WAD file format.
 
@@ -16,7 +34,7 @@ WAD file and save individual lumps as binary files.
 Doom - interpret lumps specifically formatted for the Doom engine and
 various source ports (BOOM, MBF).
 
-FOOTER
+FOOTNOTES
 
 According to the Doom Bible, WAD is an acronym for "Where's All the
 Data?". Alternatively, Wadder considers "Wad of Aggregate Data" to be
