@@ -52,7 +52,7 @@ class Wad:
         with open(filename, 'rb') as file:
             self.header = file.read(12)
             file.seek(0)
-            self.identification = readint(file.read(4))
+            self.identification = readstr(file.read(4))
             self.numlumps = readint(file.read(4))
             self.infotableofs = readint(file.read(4))
             if self.identification[1:] == "WAD":

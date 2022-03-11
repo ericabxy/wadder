@@ -28,11 +28,11 @@ can interpret the data from specialized lumps.
 
 MODULES
 
-WAD (currently called Wads) - read the header and lump directory of a
-WAD file and save individual lumps as binary files.
+wads - read and extract binary data from WAD files
 
-Doom - interpret lumps specifically formatted for the Doom engine and
-various source ports (BOOM, MBF).
+levels - collect and save multiple lumps as level data
+
+Doom - interpret lumps formatted for the Doom engine
 
 FOOTNOTES
 
