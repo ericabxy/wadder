@@ -43,6 +43,7 @@ def main():
                 name = os.path.splitext(filename)[0] + ".ppm"
                 save_pixmap(pixmap, header['width'], header['height'], name)
 
+# TODO: put all of these functions in xwadder and access as a submodule
 def get_colormap(name):
     colormap = [x for x in range(256)]
     if name == "green":
@@ -109,7 +110,18 @@ def load_patch(filename, maxw=256):
     header = dict(width=width,height=height,leftoffset=leftoffset,
                   topoffset=topoffset,columnofs=columnofs)
     if width > maxw:
+        # TODO: provide a way to limit max width and max columns in
+        # case of invalid or corrupted file, and provide explicit
+        # overrides as parameters, and fail gracefully
         print("patter: WARNING width >", maxw, "likely not a patch lump")
+        print("patter: aborting")
+        return False
+    else:
+        print("width:", width)
+        print("height:", height)
+        print("leftoffset:", leftoffset)
+        print("topoffset:", topoffset)
+        print("columnofs:", columnofs)
     with open(filename, 'rb') as file:
         columns = []  # array to hold picture columns
         for i, offset in enumerate(columnofs):

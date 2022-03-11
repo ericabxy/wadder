@@ -19,8 +19,6 @@
     examples:
       python3 wadder.py freedoom2.wad
         parse and print the WAD header information for freedoom2.wad
-      python3 wadder.py --start=10 --end=20 --list freedm.wad
-        print the metadata for each entry from 10 to 20 for freedm.wad
       python3 wadder.py --find=FLOOR --save Valiant.wad
         find and save every lump in Valiant.wad named FLOOR*
       python3 wadder.py --save=100 DOOM2.WAD
@@ -44,11 +42,6 @@
         it with only the key specified. If more metadata is needed, use
         '--data=' to add more to the list.
 
-    --end=N
-
-        Set the last entry to index (inclusive) when using '--list'.
-        Defaults to the last entry in the directory.
-
     --entry=N
 
         Print all metadata for a single entry in the directory at index
@@ -66,12 +59,7 @@
 
         Print the requested header information.
 
-    --start=N
-
-        Set the first entry to index when using '--list'. Defaults to
-        the first entry [0].
-
-    --index
+    --index, -i
 
         Prepend each entry listed by printing its index before the
         metadata.
@@ -80,12 +68,11 @@
 
         Print the length of the directory.
 
-    --list
+    --list=N
 
-        Print each entry in the directory starting with '--start=' and
-        ending with '--end='. Each entry is printed on a new line with
-        a blank separator between each metadata. If the '--save' flag
-        is set, save each entry listed as a raw lump file.
+        Print a number of entries 'N' starting with the entry
+        indicated by '--start=N'. Each entry is printed on a new line
+        with a blank separator between each metadata.
 
     --save
 
@@ -96,6 +83,11 @@
 
         Save the lump data from the entry at index N as a binary file
         with the '.lmp' extension.
+
+    --start=N
+
+        Set the first entry to list when using '--list=N'. Defaults to
+        the first entry [0].
 """
 import os
 import sys
@@ -125,7 +117,7 @@ def main():
             print(header[key])
     # process all command flags in order
     # TODO: what if "directory" does not exist?
-    index, endex = 0, len(directory)-1
+    start, endex = 0, len(directory)-1
     for arg in sys.argv:
         if arg[0:7] == "--data=":
             key = arg[7:]
@@ -136,8 +128,8 @@ def main():
         elif arg[0:6] == "--end=":
             endex = int(arg[6:])
         elif arg[0:8] == "--entry=":
-            index = int(arg[8:])
-            entry = directory[index]
+            start = int(arg[8:])
+            entry = directory[start]
             for value in entry.values():
                 print(value, end=" ")
             print()
@@ -145,7 +137,7 @@ def main():
             match = arg[7:]
             for i, entry in enumerate(directory):
                 if entry['name'][:len(match)] == match:
-                    if "--index" in args:
+                    if ("--index" or "-i") in args:
                         print(i, end=": ")
                     for data in get_data(entry, datakeys):
                         print(data, end=" ")
@@ -154,26 +146,14 @@ def main():
                         lump = get_lump(filename, entry)
                         save_lump(lump, entry['name'])
         elif arg[0:8] == "--start=":
-            index = int(arg[8:])
+            start = int(arg[8:])
         elif arg == "--length":
             print(len(directory))
-        elif arg == "--list":
-            for i in range(index, endex+1):
-                entry = directory[i]
-                if "--index" in args:
-                    print(i, end=": ")
-                for data in get_data(entry, datakeys):
-                    print(data, end=" ")
-                print()
-                if "--save" in args:
-                    lump = get_lump(filename, entry)
-                    save_lump(lump, entry['name'])
         elif arg[0:7] == "--list=":
-            start = index
             nstop = start + int(arg[7:])
-            for i in range(start, nstop+1):
+            for i in range(start, nstop):
                 entry = directory[i]
-                if "--index" in args:
+                if ("--index" or "-i") in args:
                     print(i, end=": ")
                 for data in get_data(entry, datakeys):
                     print(data, end=" ")
@@ -182,8 +162,8 @@ def main():
                     lump = get_lump(filename, entry)
                     save_lump(lump, entry['name'])
         elif arg[0:7] == "--save=":
-            index = int(arg[7:])
-            entry = directory[index]
+            start = int(arg[7:])
+            entry = directory[start]
             lump = get_lump(filename, entry)
             save_lump(lump, entry['name'])
     # cordially parse results if no commands are given
@@ -261,8 +241,6 @@ def usage():
     print("examples:")
     print("  python3 wadder.py freedoom2.wad")
     print("    parse and print the WAD header information for freedoom2.wad")
-    print("  python3 wadder.py --index=10 --end=20 --list freedm.wad")
-    print("    print the metadata for each entry from 10 to 20 for freedm.wad")
     print("  python3 wadder.py --find=FLOOR --save Valiant.wad")
     print("    find and save every lump in Valiant.wad named FLOOR*")
     print("  python3 wadder.py --save=100 DOOM2.WAD")
