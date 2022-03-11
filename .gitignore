@@ -8,5 +8,6 @@
 *.pyc
 *.swp
 *.wad
+wadinfo.txt
 
 __pycache__/*
