@@ -17,7 +17,7 @@
 #    along with Wadder. If not, see <https://www.gnu.org/licenses/>.
 #
 """
-Wadder - modules for handling the WAD file format.
+Wadder - modules for working with the WAD file format.
 
 Using some of the extensive documentation found at The Doom Wiki[1],
 Wadder provides functions and classes designed to interpret and extract
@@ -32,7 +32,7 @@ wads - read and extract binary data from WAD files
 
 levels - collect and save multiple lumps as level data
 
-Doom - interpret lumps formatted for the Doom engine
+Doom - interpret lumps specific to the Doom engine
 
 FOOTNOTES
 

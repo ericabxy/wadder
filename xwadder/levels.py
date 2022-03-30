@@ -16,8 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Wadder. If not, see <https://www.gnu.org/licenses/>.
 #
-"""
-a module for working with lumps associated with a level map
+"""Work with lumps associated with a level map
 """
 
 class Level:

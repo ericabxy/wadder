@@ -17,7 +17,7 @@ As of the time of writing, Wadder has no plans to require third-party
 dependencies. Graphical lumps can be easily be converted to a binary 
 Netpbm format with some simple file "write" statements. Demonstration 
 scripts that use Wadder modules, however, can depend on libraries such 
-as Pillow. These demo scripts shouldn't exist in the Wadder package 
+as Pillow. Such demo scripts shouldn't exist in the Wadder package 
 directory.
 
 Naming Conventions
