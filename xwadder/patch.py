@@ -18,6 +18,7 @@
 #
 """Interpret lumps of Doom picture format.
 """
+import os
 
 # graymap for rendering images
 default_map = bytearray()
@@ -82,27 +83,8 @@ class Picture():
                 post = Post(file)
             self.columns.append(posts)
         file.close()
-        self.map, self.mask = self.rasterize()
 
-    def rasterize(self):
-        """Return pixel map and transparency mask from draw data.
-
-        The picture format is drawn top-to-bottom, skipping areas of
-        transparency. Since 'map' can only store solid colors,
-        transparent pixels are stored in 'mask'.
-        """
-        width, height = self.width, self.height
-        map = bytearray(width * height)
-        mask = bytearray(width * height)
-        for x, column in enumerate(self.columns):
-            for post in column:
-                topdelta = post.topdelta
-                for y, data in enumerate(post.data):
-                    map[x + (topdelta * width) + (y * width)] = data
-                    mask[x + (topdelta * width) + (y * width)] = 255
-        return map, mask
-
-    def save_image(self, filename, playpal=default_map):
+    def save_image(self, name="picture", playpal=default_map):
         """Save a simple Netpbm file based on picture data.
 
         The picture format is stored in pixels with values between 0
@@ -117,7 +99,8 @@ class Picture():
                     offset = value * 3
                     color = playpal[offset: offset + 3]
                     map[x + (topdelta * width) + (y * width)] = color
-        with open(filename, 'wb') as file:
+        path = ".".join([name, "ppm"])
+        with open(path, 'wb') as file:
             file.write(b"P6 ")
             file.write(bytes(str(width) + " ", 'utf_8'))
             file.write(bytes(str(height) + " ", 'utf_8'))

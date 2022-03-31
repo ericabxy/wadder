@@ -28,6 +28,14 @@ way.
 import os
 import sys
 
+def readint(data):
+    """Interpret binary data as an integer."""
+    return int.from_bytes(data, byteorder='little')
+
+def readstr(data):
+    """Interpret binary data as a string."""
+    return data.decode('ascii').strip("\0")
+
 class Wad:
     """Represent a WAD binary data file.
 
@@ -48,7 +56,6 @@ class Wad:
         First load and interpret the 12-byte header. If the header
         indicates a valid WAD format, load and interpret the directory.
         """
-        self.byteorder = 'little'
         with open(filename, 'rb') as file:
             self.header = file.read(12)
             file.seek(0)
@@ -63,10 +70,11 @@ class Wad:
                     size = readint(file.read(4))
                     name = readstr(file.read(8))
                     entry = dict(
-                            index=i,
-                            filepos=filepos,
-                            size=size,
-                            name=name)
+                        index=i,
+                        filepos=filepos,
+                        size=size,
+                        name=name
+                        )
                     self.directory.append(entry)
         self.filename = filename
 
@@ -90,6 +98,9 @@ class Wad:
                     return i
         return locates
 
+    def get_data(self, index):
+        return self.get_lump(index)
+
     def get_entry(self, index):
         """Return the entry at 'index'."""
         return self.directory[index]
@@ -102,25 +113,12 @@ class Wad:
             lump = file.read(entry['size'])
         return lump
 
-    def report(self):
-        if self.header[0:4] == b"IWAD":
-            print("wadder: 'Internal WAD' signature identified")
-        elif self.header[0:4] == b"PWAD":
-            print("wadder: 'Patch WAD' signature identified")
-        elif self.header[1:4] == b"WAD":
-            print("wadder: non-standard WAD signature")
-        else:
-            print("wadder: file does not have a WAD signature")
-        print("raw header:", self.header)
-        print("signature:", self.identification)
-        print("total number of lumps:", self.numlumps)
-        print("location of directory:", self.infotableofs)
-
-
-def readint(data):
-    """Interpret binary data as an integer."""
-    return int.from_bytes(data, byteorder='little')
-
-def readstr(data):
-    """Interpret binary data as a string."""
-    return data.decode('ascii').strip("\0")
+    def save_lump(self, index, dirname, filename=None):
+        entry = self.directory[index]
+        if not filename:
+            filename = entry['name']
+        path = os.path.join(dirname, filename)
+        data = self.get_data(index)
+        with open(path, 'wb') as file:
+            file.write(data)
+        return path

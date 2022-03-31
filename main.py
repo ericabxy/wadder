@@ -80,36 +80,24 @@ def _parse(wad, args):
                 print(entry)
         elif arg[0: 12] == "--save-lump=":
             n = int(arg[12: ])
-            data = wad.get_lump(n)
-            entry = wad.get_entry(n)
-            name = "".join([entry['name'], ".lmp"])
-            with open(name, 'wb') as file:
-                print("saving lump data to", name)
-                file.write(data)
+            path = wad.save_lump(n, os.getcwd())
+            print("saved lump data to", path)
         elif arg[0: 11] == "--save-map=":
             name = arg[11: ]
             if not os.path.isdir(name):
                 os.mkdir(name)
             locate = wad.locate_name(name)
             for n in range(locate, locate + 11):
-                entry = wad.get_entry(n)
-                data = wad.get_lump(n)
-                path = os.path.join(name, entry['name'])
-                with open(path, 'wb') as file:
-                    file.write(data)
+                wad.save_lump(n, name)
         elif arg[0: 13] == "--save-patch=":
             n = int(arg[13: ])
-            data = wad.get_lump(n)
-            entry = wad.get_entry(n)
-            name = ".".join([entry['name'], "lmp"])
-            with tempfile.TemporaryFile('r+b') as file:
-                file.write(data)
-                picture = patch.Picture(file)
-            number = wad.locate_name("PLAYPAL")
-            if number:
-                playpal = wad.get_lump(number)
-            name = ".".join([entry['name'], "ppm"])
-            picture.save_image(name, playpal)
+            with tempfile.TemporaryDirectory() as dirname:
+                path = wad.save_lump(n, dirname)
+                picture = patch.Picture(path)
+            n = wad.locate("PLAYPAL")
+            playpal = wad.get_lump(n)
+            name = os.path.basename(path)
+            picture.save_image(name, playpal=playpal)
         elif arg[0: 8] == "--start=":
             start = int(arg[8: ])
 
