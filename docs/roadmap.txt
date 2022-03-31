@@ -1,0 +1,23 @@
+Doom and games using derivatives of the Doom engine have historically
+used a variety of lump formats. The following is a list of known
+formats and a note on whether they can be interpreted by Wadder and
+the location of the classes responsible for them.
+
+- Patch: xwadder.Doom.Picture
+- Post: xwadder.Doom.Post
+- Texture: not implemented
+- Flat: flatter
+- Playpal: xwadder.Doom.Playpal
+- Colormap: planned for xwadder.Doom
+- Endlump: not implemented
+- Things: xwadder.Doom.Thing
+- Linedefs: xwadder.Doom.Linedef
+- Sidedefs: xwadder.Doom.Sidedef
+- Vertexes: xwadder.Doom.Vertex
+- Sectors: planned for xwadder.Doom
+
+The following formats are not planned for Wadder support.
+
+- Sound (https://doomwiki.org/wiki/Sound)
+- Music (https://doomwiki.org/wiki/Music)
+- Demo (https://doomwiki.org/wiki/Demo)

@@ -38,17 +38,9 @@ def main():
             elif arg == "--save-pixmap":
                 palette = playpal.maps[0]
                 name = os.path.splitext(filename)[0] + ".ppm"
-                palette = playpal.get_translate('brown')
                 picture.save_pixmap(palette, name)
             elif arg == "--save-graymap":
                 name = os.path.splitext(filename)[0] + ".pgm"
-                picture.save_graymap(name)
-            elif arg[0: 14] == "--save-pixmap=":
-                name = arg[14:]
-                palette = playpal.maps[0]
-                picture.save_pixmap(palette, name)
-            elif arg[0: 15] == "--save-graymap=":
-                name = arg[15:]
                 picture.save_graymap(name)
 
 if __name__ == "__main__":

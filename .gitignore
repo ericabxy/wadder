@@ -10,4 +10,5 @@
 *.wad
 wadinfo.txt
 
+MAP*/*
 __pycache__/*

@@ -1,0 +1,30 @@
+# Development
+
+Wadder is a versatile Python module that can perform a variety of WAD 
+data manipulations.
+
+"wadder.py" is the original, stand-alone script. It will be kept for
+historical purposes. Most of Wadder's functionality is being moved into
+the 'xwadder' package which provides simple, easy-to-use modules and
+classes that interpret WAD and lump data. Scripts in the root directory
+contain functions that read WAD and lump data into the objects of
+'xwadder' and do perform useful operations in response to simple
+commands.
+
+"main.py" works with WAD data, including generic lumps and
+Doom-specific lumps. It does not depend on third-party libraries thus
+while it can save simple Netpbm files and cannot use Pillow to draw
+complex images.
+
+"draw.py" depends on Pillow and is designed to draw 2D representations
+of Doom level maps.
+
+# Command-line Behavior
+
+The "main" function of the script should provide command-line access to 
+the other functions. This usage is intended for terminal users and 
+writers of command scripts and it should print limited amounts of data 
+for the user to grep, pipe, save, etc.. Eventually users will be able to 
+e.g. filter a list of WAD and save each of their PLAYPAL lumps in a 
+separate folder, or save a list of locations and check a series of WAD 
+to see what is at that location in each WAD.

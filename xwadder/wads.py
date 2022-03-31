@@ -70,11 +70,25 @@ class Wad:
                     self.directory.append(entry)
         self.filename = filename
 
-    def locate_name(self, name):
-        """Return the location of the first entry matching 'name'."""
+    def locate(self, name, n=0):
+        """Return the location of the nth entry matching 'name'."""
+        instances = []
         for i, entry in enumerate(self.directory):
             if entry['name'][:len(name)] == name:
-                return i
+                instances.append(i)
+        if len(instances) > n:
+            return instances[n]
+
+    def locate_name(self, name, multi=False):
+        """Return the location of the first entry matching 'name'."""
+        locates = []
+        for i, entry in enumerate(self.directory):
+            if entry['name'][:len(name)] == name:
+                if multi:
+                    locates.append(i)
+                else:
+                    return i
+        return locates
 
     def get_entry(self, index):
         """Return the entry at 'index'."""
@@ -83,7 +97,6 @@ class Wad:
     def get_lump(self, index):
         """Return lump data as bytes."""
         entry = self.directory[index]
-        name = entry['name'].rstrip("\0") + ".lmp"
         with open(self.filename, 'rb') as file:
             file.seek(entry['filepos'])
             lump = file.read(entry['size'])
@@ -110,4 +123,4 @@ def readint(data):
 
 def readstr(data):
     """Interpret binary data as a string."""
-    return data.decode()
+    return data.decode('ascii').strip("\0")
